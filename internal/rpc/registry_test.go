@@ -4,16 +4,6 @@ import (
 	"testing"
 )
 
-// validSchema returns a compiled JSON schema suitable for testing.
-func validSchema(t *testing.T) interface{ Validate(any) error } {
-	t.Helper()
-	s, err := compileSchema(`{"type":"object"}`)
-	if err != nil {
-		t.Fatalf("compileSchema: %v", err)
-	}
-	return s
-}
-
 func TestRegistry_RegisterNil(t *testing.T) {
 	r := NewRegistry()
 	if err := r.Register(nil); err == nil {

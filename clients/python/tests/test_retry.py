@@ -1,7 +1,5 @@
 """Unit tests for backoff() and with_retry()."""
 
-from __future__ import annotations
-
 from unittest.mock import MagicMock
 
 import pytest

@@ -49,20 +49,25 @@ func TestIsSafeIdent_Accepts(t *testing.T) {
 }
 
 func TestIsSafeIdent_Rejects(t *testing.T) {
-	cases := []string{
-		"",                        // empty
-		strings.Repeat("a", 64),  // too long
-		"Documents",               // uppercase
-		"my-table",                // dash
-		"my table",                // space
-		"table;drop",              // semicolon
-		"a.b",                     // dot
-		"$field",                  // dollar
-		"\"quoted\"",              // quote
+	cases := []struct {
+		name  string
+		ident string
+	}{
+		{"empty", ""},
+		{"too long (64 chars)", strings.Repeat("a", 64)},
+		{"uppercase", "Documents"},
+		{"dash", "my-table"},
+		{"space", "my table"},
+		{"semicolon", "table;drop"},
+		{"dot", "a.b"},
+		{"dollar", "$field"},
+		{"quote", `"quoted"`},
 	}
-	for _, s := range cases {
-		if isSafeIdent(s) {
-			t.Errorf("isSafeIdent(%q) = true, want false", s)
-		}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if isSafeIdent(tc.ident) {
+				t.Errorf("isSafeIdent(%q) = true, want false", tc.ident)
+			}
+		})
 	}
 }
