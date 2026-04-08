@@ -34,8 +34,8 @@ type Config struct {
 	InsecureHTTP bool `envconfig:"INSECURE_HTTP" default:"false"`
 
 	// Database (gateway pool — never connects as superuser)
-	DatabaseURL          string        `envconfig:"DATABASE_URL" required:"true" desc:"postgres URL the gateway pool uses (login role: aicoopdb_gateway)"`
-	MigrationsDatabaseURL string        `envconfig:"MIGRATIONS_DATABASE_URL" desc:"postgres URL used by cmd/migrate (login role: aicoopdb_owner). defaults to DATABASE_URL"`
+	DatabaseURL           string `envconfig:"DATABASE_URL" required:"true" desc:"postgres URL the gateway pool uses (login role: aicoopdb_gateway)"`
+	MigrationsDatabaseURL string `envconfig:"MIGRATIONS_DATABASE_URL" desc:"postgres URL used by cmd/migrate (login role: aicoopdb_owner). defaults to DATABASE_URL"`
 	// GatewayPassword is the password for the aicoopdb_gateway role. When
 	// set, the server runs ALTER ROLE WITH PASSWORD on it after migrations
 	// (so the role gets a password without baking it into a migration file)
@@ -46,7 +46,7 @@ type Config struct {
 	// `*_FILE` variant: AICOOPDB_GATEWAY_PASSWORD_FILE points at a file
 	// (typically /run/secrets/aicoopdb_gateway_password) whose contents are
 	// used. This is the standard docker / swarm secret-mount pattern.
-	GatewayPassword      string        `envconfig:"GATEWAY_PASSWORD" desc:"password for the aicoopdb_gateway role; required for cloud / swarm profiles, optional for local trust-auth dev. AICOOPDB_GATEWAY_PASSWORD_FILE is also accepted."`
+	GatewayPassword string `envconfig:"GATEWAY_PASSWORD" desc:"password for the aicoopdb_gateway role; required for cloud / swarm profiles, optional for local trust-auth dev. AICOOPDB_GATEWAY_PASSWORD_FILE is also accepted."`
 	// OwnerPassword is the password for the aicoopdb_owner role. The server
 	// uses it to (a) embed in the migrations URL when running migrations
 	// and (b) reconnect as the owner to ALTER ROLE the gateway password.
@@ -57,16 +57,16 @@ type Config struct {
 	DatabaseConnLifetime time.Duration `envconfig:"DATABASE_CONN_LIFETIME" default:"30m"`
 
 	// SQL execution
-	StatementTimeout    time.Duration `envconfig:"STATEMENT_TIMEOUT" default:"5s" desc:"per-request statement_timeout (max 60s)"`
-	IdleInTxTimeout     time.Duration `envconfig:"IDLE_IN_TX_TIMEOUT" default:"5s"`
-	MaxStatementBytes   int           `envconfig:"MAX_STATEMENT_BYTES" default:"65536"`
-	MaxStatementParams  int           `envconfig:"MAX_STATEMENT_PARAMS" default:"100"`
-	DefaultSelectLimit  int           `envconfig:"DEFAULT_SELECT_LIMIT" default:"1000"`
-	HardSelectLimit     int           `envconfig:"HARD_SELECT_LIMIT" default:"10000"`
+	StatementTimeout   time.Duration `envconfig:"STATEMENT_TIMEOUT" default:"5s" desc:"per-request statement_timeout (max 60s)"`
+	IdleInTxTimeout    time.Duration `envconfig:"IDLE_IN_TX_TIMEOUT" default:"5s"`
+	MaxStatementBytes  int           `envconfig:"MAX_STATEMENT_BYTES" default:"65536"`
+	MaxStatementParams int           `envconfig:"MAX_STATEMENT_PARAMS" default:"100"`
+	DefaultSelectLimit int           `envconfig:"DEFAULT_SELECT_LIMIT" default:"1000"`
+	HardSelectLimit    int           `envconfig:"HARD_SELECT_LIMIT" default:"10000"`
 
 	// Auth
-	AuthCacheSize int           `envconfig:"AUTH_CACHE_SIZE" default:"1024"`
-	AuthCacheTTL  time.Duration `envconfig:"AUTH_CACHE_TTL" default:"5m"`
+	AuthCacheSize    int           `envconfig:"AUTH_CACHE_SIZE" default:"1024"`
+	AuthCacheTTL     time.Duration `envconfig:"AUTH_CACHE_TTL" default:"5m"`
 	KeyRotateOverlap time.Duration `envconfig:"KEY_ROTATE_OVERLAP" default:"24h"`
 
 	// Rate limiting
@@ -77,10 +77,10 @@ type Config struct {
 	AuditIncludeSQL bool `envconfig:"AUDIT_INCLUDE_SQL" default:"false" desc:"if true, store full SQL+params in audit_logs (compliance use)"`
 
 	// Observability
-	LogLevel        string `envconfig:"LOG_LEVEL" default:"info"`
-	LogFormat       string `envconfig:"LOG_FORMAT" default:"json"`
-	MetricsEnabled  bool   `envconfig:"METRICS_ENABLED" default:"true"`
-	OTELEndpoint    string `envconfig:"OTEL_EXPORTER_OTLP_ENDPOINT" desc:"optional OTLP collector"`
+	LogLevel       string `envconfig:"LOG_LEVEL" default:"info"`
+	LogFormat      string `envconfig:"LOG_FORMAT" default:"json"`
+	MetricsEnabled bool   `envconfig:"METRICS_ENABLED" default:"true"`
+	OTELEndpoint   string `envconfig:"OTEL_EXPORTER_OTLP_ENDPOINT" desc:"optional OTLP collector"`
 
 	// Run-once flags
 	MigrateOnStart bool `envconfig:"MIGRATE_ON_START" default:"true" desc:"run pending migrations at startup before serving traffic"`

@@ -19,6 +19,8 @@ import (
 // IdempotencyState is the row state in idempotency_keys.
 type IdempotencyState string
 
+// Recognised values of the idempotency_keys.state column. Mirrored
+// from the CHECK constraint in migration 0002.
 const (
 	StatePending IdempotencyState = "pending"
 	StateDone    IdempotencyState = "done"
@@ -34,9 +36,9 @@ type IdempotencyResult struct {
 	Body       []byte
 }
 
-// IdempotencyConflict is returned when a key was already used for a
+// ErrIdempotencyConflict is returned when a key was already used for a
 // different request hash (the same key with different content).
-var IdempotencyConflict = errors.New("idempotency_key reused with different request body")
+var ErrIdempotencyConflict = errors.New("idempotency_key reused with different request body")
 
 // IdempotencyStore is the persistence layer behind the dispatcher.
 type IdempotencyStore struct {
@@ -140,7 +142,7 @@ WHERE workspace_id = $1 AND key = $2`,
 
 	if hashGot != requestHash {
 		_ = tx.Commit(ctx)
-		return nil, IdempotencyConflict
+		return nil, ErrIdempotencyConflict
 	}
 	if state == StatePending {
 		// In flight — caller should retry shortly. We surface this as a
@@ -206,6 +208,6 @@ func gunzip(p []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 	return io.ReadAll(r)
 }

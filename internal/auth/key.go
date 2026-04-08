@@ -17,6 +17,9 @@ import (
 // KeyEnvironment is the env tag baked into a key string.
 type KeyEnvironment string
 
+// Recognised env tags. The api_keys.env CHECK constraint accepts only
+// these three values, and ParseBearer rejects everything else with
+// ErrInvalidKey.
 const (
 	EnvLive KeyEnvironment = "live"
 	EnvDev  KeyEnvironment = "dev"
@@ -195,7 +198,14 @@ func VerifySecret(secret, phc string) error {
 	if err != nil {
 		return ErrInvalidKey
 	}
-	got := argon2.IDKey([]byte(secret), salt, t, m, p, uint32(len(want)))
+	// gosec G115 wants a bounds check on the int -> uint32 conversion.
+	// We hash to argonKeyLen bytes, so the verify length must equal it;
+	// if a stored hash decodes to anything else the PHC string is
+	// malformed and we treat it as an invalid key.
+	if len(want) != int(argonKeyLen) {
+		return ErrInvalidKey
+	}
+	got := argon2.IDKey([]byte(secret), salt, t, m, p, argonKeyLen)
 	if subtleConstantTimeEq(got, want) {
 		return nil
 	}

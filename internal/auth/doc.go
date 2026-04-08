@@ -10,9 +10,9 @@
 //   - "acd"      — fixed prefix so the token is greppable in logs
 //   - <env>      — "live" | "dev" | "test"; matches api_keys.env
 //   - <key_id>   — 16 url-safe base64 chars (12 raw bytes), used as the
-//                  unique lookup column on api_keys
+//     unique lookup column on api_keys
 //   - <secret>   — 32 url-safe base64 chars (24 raw bytes, ~192 bits of
-//                  entropy), verified against secret_hash with argon2id
+//     entropy), verified against secret_hash with argon2id
 //
 // The full token is shown to the caller exactly once at creation time. Only
 // secret_hash is stored in the database; the plaintext is never logged.

@@ -142,7 +142,7 @@ func (a *API) handleSQLExecute(w http.ResponseWriter, r *http.Request) {
 		hash := rpc.HashRequest(r.Method, r.URL.Path, bodyBytes)
 		ir, ierr := a.idem.BeginOrReplay(r.Context(), ws.WorkspaceID, idemKey, hash, 24*time.Hour)
 		if ierr != nil {
-			if errors.Is(ierr, rpc.IdempotencyConflict) {
+			if errors.Is(ierr, rpc.ErrIdempotencyConflict) {
 				WriteProblem(w, Problem{Title: "idempotency_conflict", Status: http.StatusConflict, Detail: ierr.Error()})
 				return
 			}
@@ -221,7 +221,7 @@ func (a *API) handleRPCCall(w http.ResponseWriter, r *http.Request) {
 			WriteProblem(w, Problem{Title: "unknown_procedure", Status: http.StatusNotFound, Detail: err.Error()})
 		case errors.Is(err, rpc.ErrRoleNotPermitted):
 			WriteProblem(w, Problem{Title: "permission_denied", Status: http.StatusForbidden, Detail: err.Error()})
-		case errors.Is(err, rpc.IdempotencyConflict):
+		case errors.Is(err, rpc.ErrIdempotencyConflict):
 			WriteProblem(w, Problem{Title: "idempotency_conflict", Status: http.StatusConflict, Detail: err.Error()})
 		default:
 			WriteProblem(w, MapError(err))

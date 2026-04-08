@@ -222,16 +222,16 @@ func TestIsSafeIdent(t *testing.T) {
 	}
 
 	bad := []string{
-		"",                       // empty
-		strings.Repeat("a", 64),  // too long
-		"ABC",                    // uppercase
-		"with space",             // space
-		"with-hyphen",            // hyphen
-		"with.dot",               // dot
-		`with"quote`,             // quote
-		`with;semicolon`,         // semicolon
-		"unicodé",                // non-ascii
-		"abc\x00def",             // NUL byte
+		"",                      // empty
+		strings.Repeat("a", 64), // too long
+		"ABC",                   // uppercase
+		"with space",            // space
+		"with-hyphen",           // hyphen
+		"with.dot",              // dot
+		`with"quote`,            // quote
+		`with;semicolon`,        // semicolon
+		"unicodé",               // non-ascii
+		"abc\x00def",            // NUL byte
 	}
 	for _, s := range bad {
 		if isSafeIdent(s) {

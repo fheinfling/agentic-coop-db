@@ -5,8 +5,8 @@
 //
 //   - app.workspace_id   — used by RLS policies on tenant tables
 //   - role               — set via SET LOCAL ROLE so subsequent statements
-//                          run with the privileges Postgres has granted to
-//                          the key's role (e.g. dbadmin / dbuser / custom)
+//     run with the privileges Postgres has granted to
+//     the key's role (e.g. dbadmin / dbuser / custom)
 //
 // Both are scoped to the transaction, so a connection returned to the pool
 // reverts to its baseline state (the aicoopdb_gateway login role with no

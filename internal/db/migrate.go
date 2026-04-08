@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5" // postgres driver
-	_ "github.com/golang-migrate/migrate/v4/source/file"    // file:// source
+	_ "github.com/golang-migrate/migrate/v4/source/file"     // file:// source
 	"github.com/jackc/pgx/v5"
 )
 

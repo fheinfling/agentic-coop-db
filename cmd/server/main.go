@@ -218,16 +218,16 @@ func run() error {
 	rpcDispatcher := rpc.NewDispatcher(pool, rpcRegistry, logger)
 
 	api := httpapi.New(httpapi.Deps{
-		Config:        cfg,
-		Logger:        logger,
-		Metrics:       metrics,
-		Pool:          pool,
+		Config:         cfg,
+		Logger:         logger,
+		Metrics:        metrics,
+		Pool:           pool,
 		AuthMiddleware: authMW,
-		AuthStore:     authStore,
-		Auditor:       auditor,
-		Validator:     validator,
-		Executor:      executor,
-		RPCDispatcher: rpcDispatcher,
+		AuthStore:      authStore,
+		Auditor:        auditor,
+		Validator:      validator,
+		Executor:       executor,
+		RPCDispatcher:  rpcDispatcher,
 	})
 
 	router := chi.NewRouter()

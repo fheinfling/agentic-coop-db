@@ -24,7 +24,7 @@ func Format(v []float32) string {
 		if i > 0 {
 			sb.WriteByte(',')
 		}
-		sb.WriteString(fmt.Sprintf("%g", f))
+		fmt.Fprintf(&sb, "%g", f)
 	}
 	sb.WriteByte(']')
 	return sb.String()

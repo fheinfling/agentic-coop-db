@@ -25,10 +25,10 @@ func TestSQLBypassAttempts(t *testing.T) {
 		sql  string
 	}{
 		{"stacked statements", "SELECT 1; DROP TABLE workspaces;"},
-		{"pg_read_file",       "SELECT pg_read_file('/etc/passwd')"},
-		{"copy from program",  "COPY notes FROM PROGRAM 'cat /etc/passwd'"},
-		{"select pg_authid",   "SELECT * FROM pg_authid"},
-		{"cte delete",         "WITH d AS (DELETE FROM workspaces RETURNING *) SELECT * FROM d"},
+		{"pg_read_file", "SELECT pg_read_file('/etc/passwd')"},
+		{"copy from program", "COPY notes FROM PROGRAM 'cat /etc/passwd'"},
+		{"select pg_authid", "SELECT * FROM pg_authid"},
+		{"cte delete", "WITH d AS (DELETE FROM workspaces RETURNING *) SELECT * FROM d"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

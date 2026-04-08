@@ -115,12 +115,12 @@ func TestValidate_HappyPath(t *testing.T) {
 	v := NewValidator(ValidatorConfig{})
 
 	cases := []struct {
-		name        string
-		sql         string
-		params      []any
-		wantCmd     string
-		wantSelect  bool
-		wantPlaceN  int
+		name       string
+		sql        string
+		params     []any
+		wantCmd    string
+		wantSelect bool
+		wantPlaceN int
 	}{
 		{"bare select", "SELECT 1", nil, "SELECT", true, 0},
 		{"select with placeholder", "SELECT $1", []any{42}, "SELECT", true, 1},

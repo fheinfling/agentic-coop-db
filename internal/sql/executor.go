@@ -47,14 +47,14 @@ func NewExecutor(pool *pgxpool.Pool, cfg ExecutorConfig) *Executor {
 
 // Response is the JSON-shaped result returned to the client.
 type Response struct {
-	Command      string           `json:"command"`
-	Columns      []string         `json:"columns,omitempty"`
-	Rows         [][]any          `json:"rows,omitempty"`
-	RowsAffected int64            `json:"rows_affected"`
-	DurationMS   int              `json:"duration_ms"`
-	Notice       string           `json:"notice,omitempty"`
-	SQLState     string           `json:"-"`
-	PgError      *pgconn.PgError  `json:"-"`
+	Command      string          `json:"command"`
+	Columns      []string        `json:"columns,omitempty"`
+	Rows         [][]any         `json:"rows,omitempty"`
+	RowsAffected int64           `json:"rows_affected"`
+	DurationMS   int             `json:"duration_ms"`
+	Notice       string          `json:"notice,omitempty"`
+	SQLState     string          `json:"-"`
+	PgError      *pgconn.PgError `json:"-"`
 }
 
 // ExecuteInput bundles everything Execute needs.
@@ -100,7 +100,7 @@ func (e *Executor) Execute(ctx context.Context, in ExecuteInput) (*Response, err
 		descs := rows.FieldDescriptions()
 		resp.Columns = make([]string, len(descs))
 		for i, d := range descs {
-			resp.Columns[i] = string(d.Name)
+			resp.Columns[i] = d.Name
 		}
 
 		for rows.Next() {

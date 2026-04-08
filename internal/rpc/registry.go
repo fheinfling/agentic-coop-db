@@ -17,8 +17,8 @@ type Procedure struct {
 	Version      int
 	Description  string
 	RequiredRole string
-	BodyPath     string         // relative to sql/rpc/
-	Body         string         // loaded once at startup
+	BodyPath     string // relative to sql/rpc/
+	Body         string // loaded once at startup
 	Schema       *jsonschema.Schema
 }
 

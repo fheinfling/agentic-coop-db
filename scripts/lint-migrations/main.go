@@ -3,12 +3,12 @@
 //
 // Heuristic:
 //
-//   1. Walk every *.up.sql under migrations/.
-//   2. Identify CREATE TABLE statements that have a `workspace_id` column.
-//   3. For each such table T, the same migration MUST contain:
-//      - ALTER TABLE T ENABLE ROW LEVEL SECURITY
-//      - ALTER TABLE T FORCE  ROW LEVEL SECURITY
-//      - CREATE POLICY ... ON T ... USING (workspace_id = current_setting('app.workspace_id'...
+//  1. Walk every *.up.sql under migrations/.
+//  2. Identify CREATE TABLE statements that have a `workspace_id` column.
+//  3. For each such table T, the same migration MUST contain:
+//     - ALTER TABLE T ENABLE ROW LEVEL SECURITY
+//     - ALTER TABLE T FORCE  ROW LEVEL SECURITY
+//     - CREATE POLICY ... ON T ... USING (workspace_id = current_setting('app.workspace_id'...
 //
 // The check is intentionally regex-based: it does not need a full SQL
 // parser to be useful, and it stays runnable from a `go run` invocation
@@ -25,11 +25,11 @@ import (
 )
 
 var (
-	createTableRE = regexp.MustCompile(`(?is)CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_][a-z0-9_]*)\s*\((.*?)\)\s*;`)
+	createTableRE  = regexp.MustCompile(`(?is)CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_][a-z0-9_]*)\s*\((.*?)\)\s*;`)
 	workspaceColRE = regexp.MustCompile(`(?im)^\s*workspace_id\b`)
-	enableRLSRE   = regexp.MustCompile(`(?i)ALTER\s+TABLE\s+%s\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY`)
-	forceRLSRE    = regexp.MustCompile(`(?i)ALTER\s+TABLE\s+%s\s+FORCE\s+ROW\s+LEVEL\s+SECURITY`)
-	policyRE      = regexp.MustCompile(`(?is)CREATE\s+POLICY\s+\S+\s+ON\s+%s\s+.*?current_setting\(\s*'app.workspace_id'`)
+	enableRLSRE    = regexp.MustCompile(`(?i)ALTER\s+TABLE\s+%s\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY`)
+	forceRLSRE     = regexp.MustCompile(`(?i)ALTER\s+TABLE\s+%s\s+FORCE\s+ROW\s+LEVEL\s+SECURITY`)
+	policyRE       = regexp.MustCompile(`(?is)CREATE\s+POLICY\s+\S+\s+ON\s+%s\s+.*?current_setting\(\s*'app.workspace_id'`)
 )
 
 // controlPlaneTables lists tables that the linter must NOT require RLS

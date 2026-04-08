@@ -29,13 +29,22 @@ linters:
     gosec:
       excludes:
         - G204  # subprocess launched with variable - migrations CLI
-        - G304  # file path provided as taint input - config files
+        - G304  # file path provided as taint input - config files (v1 name)
+        - G703  # file path provided as taint input - config files (v2 name)
+        - G118  # goroutine uses context.Background - audit writer outlives the request by design
+        - G705  # XSS via taint - we only Write() server-controlled JSON bodies, never user input
+
+  exclusions:
+    rules:
+      # Test files use intentionally fake credentials in their fixture
+      # data. G101 ("Potential hardcoded credentials: Password in URL")
+      # is a high-noise check there.
+      - path: _test\.go$
+        linters:
+          - gosec
+        text: "G101"
 
 formatters:
   enable:
     - gofmt
     - goimports
-
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
