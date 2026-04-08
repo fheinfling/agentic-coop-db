@@ -1,0 +1,158 @@
+# External-Postgres deployment: api only, no bundled database.
+#
+# Use this profile when something else terminates TLS in front of the
+# api AND you have already provisioned Postgres elsewhere. Examples:
+#
+#   - Coolify (Hetzner / DO / bare metal) with a Coolify-managed PG resource
+#   - Dokku / CapRover with a postgres plugin
+#   - Render / Railway / fly.io with their managed Postgres
+#   - Kubernetes with an in-cluster operator-managed PG
+#   - bare docker-compose where you want the api in one stack and the
+#     database in another (e.g. shared PG across multiple apps)
+#
+# Unlike compose.cloud.yml, this file is STANDALONE — it does not
+# inherit from compose.yml, because compose.yml ships its own postgres
+# service which we explicitly do not want here.
+#
+# It also does NOT bundle Caddy, restic, or prometheus. The host
+# platform is expected to provide TLS termination, backups, and metrics
+# scraping. If you want those bundled, use compose.cloud.yml instead.
+#
+# ---- Required environment variables ----------------------------------------
+#
+#   AICOOPDB_DB_HOST           Internal hostname of the postgres service.
+#                              For Coolify-managed PG this is the random
+#                              "Internal Hostname" string Coolify shows
+#                              (e.g. ihxytlahfwp273cze0tjf3tu). For other
+#                              platforms, whatever DNS name resolves from
+#                              inside the api container's network.
+#
+#   AICOOPDB_DB_NAME           Name of the database to use. If your
+#                              managed PG only exposes a default `postgres`
+#                              db, that's fine — set it to `postgres`.
+#                              Otherwise create a dedicated `aicoopdb` db.
+#
+#   AICOOPDB_DB_SUPERUSER      Username of a role that can CREATE ROLE
+#                              and ALTER ROLE. The boot sequence uses it
+#                              to run migration 0004 (which creates the
+#                              aicoopdb_gateway / dbadmin / dbuser roles)
+#                              and to set the password on aicoopdb_gateway.
+#                              For Coolify, this is `postgres`. For RDS,
+#                              the master user. The api never opens a
+#                              connection as this role at request time.
+#
+#   AICOOPDB_OWNER_PASSWORD    Password for AICOOPDB_DB_SUPERUSER. (The
+#                              env var is named OWNER for symmetry with
+#                              the in-stack `aicoopdb_owner` role used by
+#                              compose.cloud.yml — same code path, just
+#                              a different actual user.)
+#
+#   AICOOPDB_GATEWAY_PASSWORD  Password to set on the aicoopdb_gateway
+#                              role at first boot. Generate fresh:
+#                                head -c 32 /dev/urandom | base64
+#                              Treat as a secret. Subsequent deploys
+#                              must keep using the same value or the api
+#                              will rotate the role password and lose
+#                              other clients of that role (there should
+#                              not be any — the gateway role is for
+#                              this api only).
+#
+# ---- Optional environment variables ----------------------------------------
+#
+#   AICOOPDB_DB_PORT           default: 5432
+#   AICOOPDB_DB_SSLMODE        default: require
+#                              Use `disable` only if both services live on
+#                              the same internal network without TLS.
+#
+# ---- Pre-flight checks ------------------------------------------------------
+#
+#  1. The Postgres image MUST have the pgvector extension. Migration
+#     0005 runs `CREATE EXTENSION vector` and will fail otherwise. Test:
+#
+#       psql "$URL" -c 'SELECT * FROM pg_available_extensions WHERE name = '"'"'vector'"'"';'
+#
+#     If you get zero rows, switch the image to `pgvector/pgvector:pg16`
+#     (or compile pgvector into your existing image).
+#
+#  2. Network reachability from the api container to the database host.
+#     For Coolify, the api and the PG resource must share a project /
+#     network. For RDS-style hosted PG, the api host needs an outbound
+#     route + the PG security group must allow it.
+#
+#  3. The migrations user must own (or be granted CREATE on) the target
+#     database. A vanilla superuser already satisfies this.
+#
+# ---- Boot sequence (what happens on first deploy) --------------------------
+#
+#   a. /app/ai-coop-db-server starts, reads AICOOPDB_* env.
+#   b. Connects to MIGRATIONS_DATABASE_URL as the superuser, runs all
+#      pending migrations idempotently. Migration 0004 creates the role
+#      hierarchy; 0005 enables pgvector; 0007 splits the control plane.
+#   c. Runs ALTER ROLE aicoopdb_gateway WITH PASSWORD '<gateway pw>'.
+#   d. Opens the gateway pool as `aicoopdb_gateway` (not the superuser)
+#      and starts serving on :8080.
+#
+# Subsequent deploys re-run (b)–(d). All steps are idempotent.
+#
+# ---- Minting the first admin key -------------------------------------------
+#
+# Once the deploy is healthy, exec into the running container (your
+# platform's `exec` equivalent) and run:
+#
+#     /app/scripts/gen-key.sh default dbadmin
+#
+# Or, if you have psql access to the database from elsewhere, you can
+# run gen-key.sh against the same DATABASE_URL — it does not need to
+# run inside the api container.
+
+services:
+  api:
+    image: ghcr.io/fheinfling/ai-coop-db-server:latest
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      AICOOPDB_HTTP_ADDR: ":8080"
+      # The host platform terminates TLS in front of us, so the gateway
+      # itself speaks plaintext on the docker network. INSECURE_HTTP=1
+      # opts in to plaintext on a non-localhost bind.
+      AICOOPDB_INSECURE_HTTP: "true"
+
+      AICOOPDB_LOG_FORMAT: "json"
+      AICOOPDB_LOG_LEVEL: "info"
+      AICOOPDB_METRICS_ENABLED: "true"
+
+      # Runtime gateway pool: connects as the unprivileged
+      # `aicoopdb_gateway` role created by migration 0004. The password
+      # is injected from AICOOPDB_GATEWAY_PASSWORD into the pool config —
+      # we deliberately do NOT bake it into the URL string so logs stay
+      # grep-friendly.
+      AICOOPDB_DATABASE_URL: "postgres://aicoopdb_gateway@${AICOOPDB_DB_HOST}:${AICOOPDB_DB_PORT:-5432}/${AICOOPDB_DB_NAME}?sslmode=${AICOOPDB_DB_SSLMODE:-require}"
+
+      # Migrations connection: runs as the database superuser so that
+      # migration 0004 can CREATE ROLE and the boot sequence can ALTER
+      # ROLE aicoopdb_gateway WITH PASSWORD.
+      AICOOPDB_MIGRATIONS_DATABASE_URL: "postgres://${AICOOPDB_DB_SUPERUSER:-postgres}@${AICOOPDB_DB_HOST}:${AICOOPDB_DB_PORT:-5432}/${AICOOPDB_DB_NAME}?sslmode=${AICOOPDB_DB_SSLMODE:-require}"
+
+      # AICOOPDB_OWNER_PASSWORD is the password for the user named in
+      # MIGRATIONS_DATABASE_URL, regardless of the role's actual name.
+      # In this profile that's the managed-PG superuser.
+      AICOOPDB_OWNER_PASSWORD: ${AICOOPDB_OWNER_PASSWORD:?required - superuser password for the migrations connection}
+
+      # AICOOPDB_GATEWAY_PASSWORD is the password the boot sequence will
+      # set on the aicoopdb_gateway role and then use to open the pool.
+      # Generate once with `head -c 32 /dev/urandom | base64` and store
+      # it as a secret.
+      AICOOPDB_GATEWAY_PASSWORD: ${AICOOPDB_GATEWAY_PASSWORD:?required - random password for the aicoopdb_gateway role}
+
+    healthcheck:
+      test: ["CMD", "/app/ai-coop-db-server", "-version"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    read_only: true
+    tmpfs:
+      - /tmp:size=16M
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
