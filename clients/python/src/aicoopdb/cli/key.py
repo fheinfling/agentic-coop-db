@@ -7,7 +7,8 @@ import json
 import typer
 
 from aicoopdb import connect
-from aicoopdb.cli.config import CLIConfig, load as load_config
+from aicoopdb.cli.config import CLIConfig
+from aicoopdb.cli.config import load as load_config
 
 key_app = typer.Typer(no_args_is_help=True)
 

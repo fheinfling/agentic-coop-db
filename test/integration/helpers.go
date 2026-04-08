@@ -130,8 +130,13 @@ func StartHarness(t *testing.T) *Harness {
 		HardSelectLimit:    1000,
 		MaxStatementBytes:  64 * 1024,
 		MaxStatementParams: 100,
-		AuthCacheSize:      32,
-		AuthCacheTTL:       1 * time.Minute,
+		AuthCacheSize: 32,
+		// Tests revoke keys mid-test and immediately call /v1/me to
+		// confirm the 401 — that path can only work if the cache TTL
+		// is shorter than the test's sleep window. 1 minute (the
+		// previous value here) made TestRevokedKeyRejected always
+		// observe a stale cache hit.
+		AuthCacheTTL:       10 * time.Millisecond,
 		KeyRotateOverlap:   1 * time.Hour,
 		RateLimitPerSecond: 1000,
 		RateLimitBurst:     2000,
