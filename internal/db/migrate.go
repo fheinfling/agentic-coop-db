@@ -162,6 +162,47 @@ func injectPassword(rawURL, password string) (string, error) {
 	return u.String(), nil
 }
 
+// EnsureOwnerRole creates the `aicoopdb_owner` role if it does not yet
+// exist. Migration 0007 references this role as the owner of the new
+// `aicoopdb` schema (CREATE SCHEMA ... AUTHORIZATION aicoopdb_owner),
+// so it must exist *before* migrations run.
+//
+// In the bundled-PG profiles (compose.local.yml, compose.cloud.yml,
+// compose.pi-lite.yml), the postgres image creates this role at init
+// time via POSTGRES_USER=aicoopdb_owner. In the external-PG profile
+// the migration user is the managed-PG superuser (e.g. `postgres`) and
+// nothing else creates the role — so this function is the bridge.
+//
+// The role is created as NOLOGIN: it exists only to own a schema and
+// hold default privileges. Connection pooling still happens through
+// `aicoopdb_gateway`. The function is idempotent — if the role already
+// exists (bundled case), the IF NOT EXISTS guard makes it a no-op.
+func EnsureOwnerRole(ctx context.Context, migrationsURL, ownerPassword string) (err error) {
+	defer func() {
+		err = redactSecrets(err, ownerPassword, urlPassword(migrationsURL))
+	}()
+	finalURL, err := injectPassword(migrationsURL, ownerPassword)
+	if err != nil {
+		return fmt.Errorf("inject password: %w", err)
+	}
+	conn, err := pgx.Connect(ctx, finalURL)
+	if err != nil {
+		return fmt.Errorf("connect: %w", err)
+	}
+	defer func() { _ = conn.Close(ctx) }()
+	const stmt = `
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'aicoopdb_owner') THEN
+        CREATE ROLE aicoopdb_owner NOLOGIN CREATEDB CREATEROLE;
+    END IF;
+END$$;`
+	if _, err := conn.Exec(ctx, stmt); err != nil {
+		return fmt.Errorf("create aicoopdb_owner: %w", err)
+	}
+	return nil
+}
+
 // SetRolePassword opens a short-lived connection as the migrations role
 // (typically aicoopdb_owner) and runs ALTER ROLE <role> WITH PASSWORD.
 //

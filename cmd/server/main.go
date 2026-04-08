@@ -101,6 +101,15 @@ func run() error {
 	// the role exists and (when applicable) has its password set.
 	var migrationsApplied atomic.Bool
 	if cfg.MigrateOnStart {
+		// Migration 0007 references aicoopdb_owner as the schema owner.
+		// In bundled-PG profiles the role exists from POSTGRES_USER=
+		// aicoopdb_owner; in the external-PG profile the migration user
+		// is the managed-PG superuser and nothing else creates the role.
+		// EnsureOwnerRole is idempotent — a no-op when the role exists.
+		logger.Info("ensuring aicoopdb_owner role exists")
+		if err := db.EnsureOwnerRole(rootCtx, cfg.MigrationsDatabaseURL, cfg.OwnerPassword); err != nil {
+			return fmt.Errorf("ensure owner role: %w", err)
+		}
 		logger.Info("running pending migrations")
 		if err := db.RunMigrations(rootCtx, cfg.MigrationsDatabaseURL, cfg.OwnerPassword); err != nil {
 			return fmt.Errorf("migrate: %w", err)
