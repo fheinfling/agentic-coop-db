@@ -1,0 +1,37 @@
+{
+    # Email is the Let's Encrypt account address. Set EMAIL in the env file.
+    email {$EMAIL}
+}
+
+{$DOMAIN} {
+    encode zstd gzip
+
+    # Block requests for paths the gateway does not implement so caddy
+    # short-circuits before reaching the api container.
+    handle /healthz       { reverse_proxy api:8080 }
+    handle /readyz        { reverse_proxy api:8080 }
+    handle /metrics       {
+        # /metrics is not exposed publicly. If you want it externally,
+        # mount a basicauth file and remove the `respond` line.
+        respond 404
+    }
+    handle /v1/* { reverse_proxy api:8080 }
+
+    # Anything else is a misconfiguration — return 404 with a small RFC7807 body.
+    handle {
+        respond `{"type":"about:blank","title":"not_found","status":404}` 404 {
+            close
+        }
+    }
+
+    # Sensible TLS hardening (Caddy default is already strict, but pin
+    # protocols + ciphers explicitly so the surface is auditable).
+    tls {
+        protocols tls1.2 tls1.3
+    }
+
+    log {
+        format json
+        level INFO
+    }
+}

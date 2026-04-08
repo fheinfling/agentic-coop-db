@@ -1,0 +1,38 @@
+# Local dev override.
+#
+# Differences from the base stack:
+#   - api is built from the local source tree (not pulled from ghcr)
+#   - api port 8080 is exposed on the host
+#   - postgres port 5432 is exposed on the host (handy for psql/pgcli)
+#   - INSECURE_HTTP=1 because there is no TLS terminator in front of us
+#
+# Used by `make up-local`.
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        VERSION: dev
+        COMMIT: local
+    image: aicoldb-server:dev
+    ports:
+      - "8080:8080"
+    environment:
+      AICOLDB_INSECURE_HTTP: "true"
+      AICOLDB_LOG_FORMAT: "text"
+      AICOLDB_LOG_LEVEL: "debug"
+
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_PASSWORD: "dev-only-not-a-real-password"
+    secrets: []
+    command:
+      - "postgres"
+      - "-c"
+      - "log_statement=ddl"
+      - "-c"
+      - "log_min_duration_statement=500"

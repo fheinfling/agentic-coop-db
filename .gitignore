@@ -1,0 +1,56 @@
+# Build artifacts
+/bin/
+/dist/
+/build/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Go workspace
+go.work
+go.work.sum
+vendor/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local secrets / state (never commit these)
+.env
+.env.local
+*.pem
+*.key
+*.crt
+secrets/
+
+# Local docker volumes
+deploy/data/
+deploy/postgres-data/
+
+# AIColDB local state
+~/.aicoldb/
+.aicoldb/
+queue.db
+queue.db-journal
+
+# Test containers reaper state
+.testcontainers/

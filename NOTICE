@@ -1,0 +1,29 @@
+AIColDB
+Copyright 2026 The AIColDB Authors
+
+This product includes software developed at
+the AIColDB project (https://github.com/fheinfling/aicoldb).
+
+This product depends on the following third-party components, each of which
+is distributed under its own license:
+
+- github.com/jackc/pgx/v5 (MIT)
+- github.com/go-chi/chi/v5 (MIT)
+- github.com/golang-migrate/migrate/v4 (MIT)
+- github.com/pganalyze/pg_query_go/v5 (Apache-2.0; embeds PostgreSQL parser, PostgreSQL License)
+- github.com/kelseyhightower/envconfig (MIT)
+- github.com/santhosh-tekuri/jsonschema/v6 (Apache-2.0)
+- github.com/hashicorp/golang-lru/v2 (MPL-2.0)
+- github.com/google/uuid (BSD-3-Clause)
+- github.com/prometheus/client_golang (Apache-2.0)
+- github.com/stretchr/testify (MIT)
+- github.com/testcontainers/testcontainers-go (Apache-2.0)
+- golang.org/x/crypto (BSD-3-Clause)
+- golang.org/x/time (BSD-3-Clause)
+
+Python client (clients/python):
+
+- requests (Apache-2.0)
+- typer (MIT)
+- pydantic (MIT)
+- platformdirs (MIT)
