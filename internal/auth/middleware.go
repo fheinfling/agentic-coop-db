@@ -22,6 +22,12 @@ type ctxKey int
 
 const wsCtxKey ctxKey = 0
 
+// NewContext returns a copy of ctx carrying ws. Used by the middleware
+// itself and by tests that need to inject an authenticated context.
+func NewContext(ctx context.Context, ws *WorkspaceContext) context.Context {
+	return context.WithValue(ctx, wsCtxKey, ws)
+}
+
 // FromContext returns the WorkspaceContext attached by the middleware, or
 // nil if the request was not authenticated.
 func FromContext(ctx context.Context) *WorkspaceContext {

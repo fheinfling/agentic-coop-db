@@ -86,6 +86,89 @@ func TestParseBearer_AcceptsBareToken(t *testing.T) {
 	}
 }
 
+func TestHashSecret_ReturnsPHC(t *testing.T) {
+	phc, err := auth.HashSecret("x")
+	if err != nil {
+		t.Fatalf("HashSecret: %v", err)
+	}
+	if !strings.HasPrefix(phc, "$argon2id$") {
+		t.Errorf("expected $argon2id$ prefix, got %q", phc)
+	}
+}
+
+func TestVerifySecret_Correct(t *testing.T) {
+	phc, err := auth.HashSecret("correct-secret")
+	if err != nil {
+		t.Fatalf("HashSecret: %v", err)
+	}
+	if err := auth.VerifySecret("correct-secret", phc); err != nil {
+		t.Errorf("VerifySecret with correct secret: %v", err)
+	}
+}
+
+func TestVerifySecret_Wrong(t *testing.T) {
+	phc, err := auth.HashSecret("original")
+	if err != nil {
+		t.Fatalf("HashSecret: %v", err)
+	}
+	if err := auth.VerifySecret("wrong", phc); err == nil {
+		t.Error("VerifySecret with wrong secret: expected error, got nil")
+	}
+}
+
+func TestVerifySecret_MalformedPHC(t *testing.T) {
+	cases := []struct {
+		name string
+		phc  string
+	}{
+		{"empty", ""},
+		{"truncated", "$argon2id$v=19"},
+		{"random_string", "not-a-phc-string"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := auth.VerifySecret("secret", tc.phc); err == nil {
+				t.Errorf("VerifySecret(%q): expected error, got nil", tc.phc)
+			}
+		})
+	}
+}
+
+func TestCacheKey_Deterministic(t *testing.T) {
+	p := &auth.ParsedKey{FullToken: "acd_dev_abcdefghijklmnop_ABCDEFGHIJKLMNOPabcdefghijklmnop"}
+	k1 := p.CacheKey()
+	k2 := p.CacheKey()
+	if k1 != k2 {
+		t.Errorf("CacheKey not deterministic: %q != %q", k1, k2)
+	}
+	if k1 == "" {
+		t.Error("CacheKey returned empty string")
+	}
+}
+
+func TestCacheKey_Distinct(t *testing.T) {
+	a := &auth.ParsedKey{FullToken: "acd_dev_aaaaaaaaaaaaaaaa_BBBBBBBBBBBBBBBBbbbbbbbbbbbbbbbb"}
+	b := &auth.ParsedKey{FullToken: "acd_dev_bbbbbbbbbbbbbbbb_BBBBBBBBBBBBBBBBbbbbbbbbbbbbbbbb"}
+	if a.CacheKey() == b.CacheKey() {
+		t.Error("different tokens produced the same CacheKey")
+	}
+}
+
+func TestKeyEnvironment_IsValid(t *testing.T) {
+	valid := []auth.KeyEnvironment{auth.EnvDev, auth.EnvLive, auth.EnvTest}
+	for _, e := range valid {
+		if !e.IsValid() {
+			t.Errorf("IsValid(%q) = false, want true", e)
+		}
+	}
+	invalid := []auth.KeyEnvironment{"prod", "staging", ""}
+	for _, e := range invalid {
+		if e.IsValid() {
+			t.Errorf("IsValid(%q) = true, want false", e)
+		}
+	}
+}
+
 func TestParseBearer_Rejects(t *testing.T) {
 	cases := []struct {
 		name   string
