@@ -22,14 +22,14 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator, Sequence
+from typing import Any
 
 from aicoopdb.errors import AICoopDBError, NetworkError, QueueFullError
 from aicoopdb.retry import backoff
-
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pending (
@@ -158,7 +158,7 @@ class Queue:
                 (attempts, str(err), next_at, item.id),
             )
 
-    def flush(self, send: "Sender") -> tuple[int, int]:
+    def flush(self, send: Sender) -> tuple[int, int]:
         """Drain the queue using `send`. Returns (sent, failed)."""
         sent, failed = 0, 0
         while True:

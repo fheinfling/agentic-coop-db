@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from aicoopdb.client import AICoopDBClient, _renumber, _format_vector
+from aicoopdb.client import AICoopDBClient, _format_vector, _renumber
 from aicoopdb.errors import (
     AuthError,
     IdempotencyConflict,

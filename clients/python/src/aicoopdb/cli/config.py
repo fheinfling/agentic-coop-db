@@ -7,13 +7,13 @@ subsequent commands don't need --url / --api-key flags. The wizard
 
 from __future__ import annotations
 
+import contextlib
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import platformdirs
-
 
 CONFIG_FILENAME = "config.toml"
 
@@ -37,10 +37,9 @@ class CLIConfig:
             f'base_url = "{self.base_url}"\napi_key  = "{self.api_key}"\n',
             encoding="utf-8",
         )
-        try:
+        # Best-effort chmod — on Windows this raises and we don't care.
+        with contextlib.suppress(OSError):
             os.chmod(path, 0o600)
-        except OSError:
-            pass
         return path
 
 

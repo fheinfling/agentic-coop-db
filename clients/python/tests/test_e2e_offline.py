@@ -24,7 +24,6 @@ import pytest
 from aicoopdb import connect
 from aicoopdb.queue import Queue, QueueItem
 
-
 pytestmark = pytest.mark.skipif(
     os.environ.get("RUN_E2E") != "1",
     reason="set RUN_E2E=1 to run the offline-queue end-to-end test",

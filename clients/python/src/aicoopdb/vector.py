@@ -8,7 +8,7 @@ build their own retry / batching wrappers.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def format_vector(v: Sequence[float]) -> str:

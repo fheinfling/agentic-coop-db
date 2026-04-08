@@ -69,15 +69,19 @@ func StartHarness(t *testing.T) *Harness {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	// Note: do NOT pass tc.WithWaitStrategy(nil) — newer testcontainers
-	// (>= v0.34) panics when it tries to deref the nil strategy. Letting
-	// the postgres module use its default wait strategy (pg_isready loop)
-	// is what we want anyway.
+	// IMPORTANT: tcpg.Run does NOT add a default wait strategy. Without
+	// tcpg.BasicWaitStrategies() the container is considered ready as
+	// soon as it starts, before initdb finishes — and the first
+	// migration call gets `connection reset by peer`. BasicWaitStrategies
+	// waits for the "database system is ready to accept connections" log
+	// to appear twice (postgres restarts itself between init and ready)
+	// AND for port 5432/tcp to be reachable on localhost.
 	pgC, err := tcpg.Run(ctx,
 		"pgvector/pgvector:pg16",
 		tcpg.WithDatabase("aicoopdb"),
 		tcpg.WithUsername("aicoopdb_owner"),
 		tcpg.WithPassword("test"),
+		tcpg.BasicWaitStrategies(),
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = pgC.Terminate(context.Background()) })

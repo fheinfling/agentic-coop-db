@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Iterator, Sequence
+from typing import Any
 
 import requests
 
@@ -38,7 +39,7 @@ class ExecuteResult:
     duration_ms: int
 
 
-def connect(base_url: str, *, api_key: str, timeout: float = 30.0, verify_tls: bool = True) -> "AICoopDBClient":
+def connect(base_url: str, *, api_key: str, timeout: float = 30.0, verify_tls: bool = True) -> AICoopDBClient:
     """Create a client bound to base_url + api_key.
 
     >>> db = connect("https://db.example.com", api_key="acd_live_...")
@@ -106,7 +107,7 @@ class AICoopDBClient:
         return [dict(zip(result.columns, row, strict=False)) for row in result.rows]
 
     @contextmanager
-    def transaction(self) -> Iterator["TransactionBuilder"]:
+    def transaction(self) -> Iterator[TransactionBuilder]:
         """Build a single-statement CTE-wrapped transaction.
 
         For multi-statement transactions, register an RPC and call it via

@@ -7,7 +7,8 @@ from pathlib import Path
 import typer
 
 from aicoopdb import connect
-from aicoopdb.cli.config import config_dir, load as load_config
+from aicoopdb.cli.config import config_dir
+from aicoopdb.cli.config import load as load_config
 from aicoopdb.queue import Queue, QueueItem
 
 queue_app = typer.Typer(no_args_is_help=True)

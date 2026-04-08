@@ -24,7 +24,8 @@ import typer
 
 from aicoopdb import __version__ as sdk_version
 from aicoopdb import connect
-from aicoopdb.cli.config import config_dir, load as load_config
+from aicoopdb.cli.config import config_dir
+from aicoopdb.cli.config import load as load_config
 from aicoopdb.errors import AICoopDBError
 from aicoopdb.queue import Queue
 
