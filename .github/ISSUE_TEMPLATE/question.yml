@@ -1,0 +1,19 @@
+name: Question
+description: Ask a question about how to use AIColDB
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have you checked `docs/faq.md`? Most questions are answered there.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What are you trying to accomplish?

@@ -1,0 +1,50 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: build sdist + wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          cd clients/python && python -m build
+      - name: upload to pypi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          cd clients/python && twine upload dist/*
+
+  github-release:
+    runs-on: ubuntu-24.04
+    needs: python
+    steps:
+      - uses: actions/checkout@v4
+      - name: extract release notes
+        id: notes
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          awk -v tag="${tag#v}" '
+            /^## \[/ { if (found) exit; if ($0 ~ "\\["tag"\\]") found=1; next }
+            found    { print }
+          ' CHANGELOG.md > release-notes.md
+      - name: create release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
