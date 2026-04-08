@@ -56,8 +56,38 @@ type ParsedKey struct {
 	FullToken string // the original full token (used for cache key only)
 }
 
+// Encoded lengths of keyID and secret. Both are base64url encodings of
+// keyIDRawBytes / secretRawBytes respectively (no padding because both
+// are multiples of 3 bytes), so they are fixed-length and we can parse
+// the token by position rather than by splitting on "_".
+const (
+	keyIDEncodedLen  = 16 // base64url(12 raw bytes)
+	secretEncodedLen = 32 // base64url(24 raw bytes)
+)
+
 // ParseBearer accepts the value of the `Authorization` header (with or
 // without the leading "Bearer ") and returns a ParsedKey or ErrInvalidKey.
+//
+// The token format is `acd_<env>_<keyID>_<secret>`. We can NOT parse it
+// by splitting on "_" because both keyID and secret are base64url-encoded
+// random bytes, and the base64url alphabet includes "_". With 16-char
+// keyIDs and 32-char secrets, ~25% of keyIDs and ~50% of secrets contain
+// at least one "_" — splitting overcounts the parts and rejects the
+// token. The original `strings.Split(_, "_")` parser broke ~60% of
+// generated keys.
+//
+// Instead we parse by position. The structure is fully determined:
+//
+//	"acd_"          (4 literal chars)
+//	<env>           (3 or 4 chars: dev / live / test, validated below)
+//	"_"             (1 literal char)
+//	<keyID>         (exactly keyIDEncodedLen chars)
+//	"_"             (1 literal char)
+//	<secret>        (exactly secretEncodedLen chars)
+//
+// env is the only variable-length component before keyID, and we find
+// it by locating the first "_" after the "acd_" prefix. Once env is
+// known, the remaining slice has exactly two fixed-length fields.
 func ParseBearer(header string) (*ParsedKey, error) {
 	header = strings.TrimSpace(header)
 	if header == "" {
@@ -66,22 +96,35 @@ func ParseBearer(header string) (*ParsedKey, error) {
 	header = strings.TrimPrefix(header, "Bearer ")
 	header = strings.TrimSpace(header)
 
-	parts := strings.Split(header, "_")
-	// "acd", env, keyID, secret
-	if len(parts) != 4 || parts[0] != "acd" {
+	if !strings.HasPrefix(header, "acd_") {
 		return nil, ErrInvalidKey
 	}
-	env := KeyEnvironment(parts[1])
+	rest := header[len("acd_"):]
+
+	sep := strings.IndexByte(rest, '_')
+	if sep < 1 {
+		return nil, ErrInvalidKey
+	}
+	env := KeyEnvironment(rest[:sep])
 	if !env.IsValid() {
 		return nil, ErrInvalidKey
 	}
-	if len(parts[2]) == 0 || len(parts[3]) == 0 {
+	rest = rest[sep+1:]
+
+	// Remaining slice must be exactly: keyID + "_" + secret.
+	if len(rest) != keyIDEncodedLen+1+secretEncodedLen {
 		return nil, ErrInvalidKey
 	}
+	if rest[keyIDEncodedLen] != '_' {
+		return nil, ErrInvalidKey
+	}
+	keyID := rest[:keyIDEncodedLen]
+	secret := rest[keyIDEncodedLen+1:]
+
 	return &ParsedKey{
 		Env:       env,
-		KeyID:     parts[2],
-		Secret:    parts[3],
+		KeyID:     keyID,
+		Secret:    secret,
 		FullToken: header,
 	}, nil
 }
