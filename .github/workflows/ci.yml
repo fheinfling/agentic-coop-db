@@ -20,7 +20,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          # Pinned to a specific patch so govulncheck passes:
+          # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
+          # fixed in 1.25.9. Bump in lockstep with the Dockerfile's
+          # GO_VERSION ARG when a new patch addresses a Go advisory.
+          go-version: "1.25.9"
           cache: true
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
@@ -42,7 +46,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          # Pinned to a specific patch so govulncheck passes:
+          # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
+          # fixed in 1.25.9. Bump in lockstep with the Dockerfile's
+          # GO_VERSION ARG when a new patch addresses a Go advisory.
+          go-version: "1.25.9"
           cache: true
       - run: go run ./scripts/lint-migrations migrations
 
@@ -56,7 +64,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          # Pinned to a specific patch so govulncheck passes:
+          # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
+          # fixed in 1.25.9. Bump in lockstep with the Dockerfile's
+          # GO_VERSION ARG when a new patch addresses a Go advisory.
+          go-version: "1.25.9"
           cache: true
       - run: go test -short ./...
 
@@ -70,7 +82,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          # Pinned to a specific patch so govulncheck passes:
+          # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
+          # fixed in 1.25.9. Bump in lockstep with the Dockerfile's
+          # GO_VERSION ARG when a new patch addresses a Go advisory.
+          go-version: "1.25.9"
           cache: true
       - run: go test -tags=integration -timeout 10m ./test/integration/... ./test/security/...
 
