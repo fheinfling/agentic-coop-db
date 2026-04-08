@@ -15,7 +15,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
-	tc "github.com/testcontainers/testcontainers-go"
 	tcpg "github.com/testcontainers/testcontainers-go/modules/postgres"
 
 	"github.com/fheinfling/ai-coop-db/internal/audit"
@@ -43,12 +42,15 @@ func StartHarness(t *testing.T) *Harness {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
+	// Note: do NOT pass tc.WithWaitStrategy(nil) — newer testcontainers
+	// (>= v0.34) panics when it tries to deref the nil strategy. Letting
+	// the postgres module use its default wait strategy (pg_isready loop)
+	// is what we want anyway.
 	pgC, err := tcpg.Run(ctx,
 		"pgvector/pgvector:pg16",
 		tcpg.WithDatabase("aicoopdb"),
 		tcpg.WithUsername("aicoopdb_owner"),
 		tcpg.WithPassword("test"),
-		tc.WithWaitStrategy(nil),
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = pgC.Terminate(context.Background()) })
