@@ -23,11 +23,12 @@ jobs:
           go-version: "1.25"
           cache: true
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          # The repo uses .golangci.yml v2 format, so we need a v2.x
-          # binary. Bumping past 1.61 also resolves the "go1.23 binary
-          # cannot lint go1.25 module" build mismatch.
+          # .golangci.yml uses the v2 config format, so we need a v2.x
+          # binary AND a v7+ action (v6 only knows how to install
+          # v1.x binaries). Bumping past v1.61 also resolves the
+          # "go1.23 binary cannot lint go1.25 module" build mismatch.
           version: v2.1.6
       - name: govulncheck
         run: |
