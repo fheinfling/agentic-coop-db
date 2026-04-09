@@ -1,0 +1,125 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-go:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          # Pinned to a specific patch so govulncheck passes:
+          # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
+          # fixed in 1.25.9. Bump in lockstep with the Dockerfile's
+          # GO_VERSION ARG when a new patch addresses a Go advisory.
+          go-version: "1.25.9"
+          cache: true
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          # .golangci.yml uses the v2 config format, so we need a v2.x
+          # binary AND a v7+ action (v6 only knows how to install
+          # v1.x binaries). v2.1.6 was still built with Go 1.24 and
+          # also rejects Go 1.25 modules — v2.11.x is the first line
+          # built with Go 1.25+.
+          version: v2.11.4
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  lint-migrations:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          # Pinned to a specific patch so govulncheck passes:
+          # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
+          # fixed in 1.25.9. Bump in lockstep with the Dockerfile's
+          # GO_VERSION ARG when a new patch addresses a Go advisory.
+          go-version: "1.25.9"
+          cache: true
+      - run: go run ./scripts/lint-migrations migrations
+
+  unit-go:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          # Pinned to a specific patch so govulncheck passes:
+          # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
+          # fixed in 1.25.9. Bump in lockstep with the Dockerfile's
+          # GO_VERSION ARG when a new patch addresses a Go advisory.
+          go-version: "1.25.9"
+          cache: true
+      - name: build
+        run: go build ./...
+      - name: test
+        run: go test -short ./...
+
+  integration-go:
+    runs-on: ubuntu-24.04
+    needs: [lint-go, lint-migrations]
+    # GitHub-hosted runners already have Docker installed and the
+    # /var/run/docker.sock socket exposed, so testcontainers-go works
+    # out of the box. We deliberately do NOT add `services: docker: dind`
+    # here — that adds a SECOND docker daemon as a sidecar, and the
+    # testcontainers-spawned containers end up unreachable from the
+    # test process (connection reset by peer on the mapped port).
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          # Pinned to a specific patch so govulncheck passes:
+          # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
+          # fixed in 1.25.9. Bump in lockstep with the Dockerfile's
+          # GO_VERSION ARG when a new patch addresses a Go advisory.
+          go-version: "1.25.9"
+          cache: true
+      - run: go test -tags=integration -timeout 10m ./test/integration/... ./test/security/...
+
+  python:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: install
+        run: |
+          python -m pip install --upgrade pip build
+          pip install -e "clients/python[dev]"
+      - name: ruff
+        run: cd clients/python && ruff check .
+      - name: mypy
+        run: cd clients/python && mypy src/agentcoopdb
+      - name: pytest
+        run: cd clients/python && pytest -q
+      - name: pip-audit
+        run: |
+          pip install pip-audit
+          pip freeze | grep -v -e '^-e ' -e 'agentic.coop.db' | pip-audit -r /dev/stdin
+        if: matrix.python == '3.12'
