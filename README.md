@@ -280,6 +280,41 @@ enforces the minimum that Postgres cannot enforce by itself:
 
 Full threat model: [`docs/security.md`](docs/security.md).
 
+## Use cases & inspiration
+
+**Distributed research pipelines.**
+Multiple agents — or human researchers — run experiments in different locations
+and push results into the same Postgres instance over HTTPS. A coordinator
+agent can then query across all results, compute aggregates, or trigger the
+next round. No shared filesystem, no VPN, no cloud vendor lock-in — just SQL
+over TLS.
+
+**RAG knowledge base.**
+Use pgvector to store embeddings alongside structured metadata in one database.
+Agents ingest documents, chunk and embed them, then write vectors with
+`vector_upsert`. At query time any agent can run a nearest-neighbour search
+with `vector_search` — retrieval-augmented generation with nothing but
+Postgres and an API key.
+
+**Replace Supabase / Neon / PlanetScale for prototypes.**
+When you're building a proof-of-concept or MVP and don't want to sign up for
+(or pay for) a managed database-as-a-service, spin up Agentic Coop DB on a
+cheap VPS or a Raspberry Pi. You get auth, TLS, role-based access, and a
+standard SQL interface — enough to validate your idea before committing to a
+platform.
+
+**Multi-agent collaboration.**
+Give each agent its own API key with the appropriate role. Agents can create
+tables, write intermediate results, and read each other's outputs — all
+governed by Postgres roles and RLS policies. The audit log tells you which
+agent wrote what and when.
+
+**Edge / IoT data collection.**
+Run the gateway on a Raspberry Pi at the edge. Field devices or local scripts
+POST sensor readings over HTTPS; a cloud-side agent periodically queries the
+Pi's database for analysis. The ARM64-tuned `pi-lite` profile keeps resource
+usage minimal.
+
 ## Run it on…
 
 | Profile      | File                              | Use case                                  |
