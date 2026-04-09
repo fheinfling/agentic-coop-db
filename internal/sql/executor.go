@@ -1,0 +1,144 @@
+package sql
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/fheinfling/agentic-coop-db/internal/tenant"
+)
+
+// ExecutorConfig configures the request-time tx settings.
+type ExecutorConfig struct {
+	StatementTimeout time.Duration
+	IdleInTxTimeout  time.Duration
+}
+
+// Executor runs validated SQL inside a request transaction.
+type Executor struct {
+	pool *pgxpool.Pool
+	cfg  ExecutorConfig
+}
+
+// NewExecutor returns a configured Executor.
+func NewExecutor(pool *pgxpool.Pool, cfg ExecutorConfig) *Executor {
+	if cfg.StatementTimeout <= 0 {
+		cfg.StatementTimeout = 5 * time.Second
+	}
+	if cfg.IdleInTxTimeout <= 0 {
+		cfg.IdleInTxTimeout = 5 * time.Second
+	}
+	return &Executor{pool: pool, cfg: cfg}
+}
+
+// Response is the JSON-shaped result returned to the client.
+type Response struct {
+	Command      string          `json:"command"`
+	Columns      []string        `json:"columns,omitempty"`
+	Rows         [][]any         `json:"rows,omitempty"`
+	RowsAffected int64           `json:"rows_affected"`
+	DurationMS   int             `json:"duration_ms"`
+	Notice       string          `json:"notice,omitempty"`
+	SQLState     string          `json:"-"`
+	PgError      *pgconn.PgError `json:"-"`
+}
+
+// ExecuteInput bundles everything Execute needs.
+type ExecuteInput struct {
+	WorkspaceID string
+	PgRole      string
+	SQL         string
+	Params      []any
+	Result      *Result // from Validator.Validate
+}
+
+// Execute runs the input inside a single transaction. It returns a Response
+// or a wrapped *pgconn.PgError so the HTTP layer can surface the SQLSTATE.
+func (e *Executor) Execute(ctx context.Context, in ExecuteInput) (*Response, error) {
+	if in.Result == nil {
+		return nil, errors.New("executor.Execute: nil validator result")
+	}
+	sqlText := in.SQL
+	start := time.Now()
+	resp := &Response{Command: in.Result.Command}
+
+	tx, err := e.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("begin: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if err := tenant.Setup(ctx, tx, in.WorkspaceID, in.PgRole, e.cfg.StatementTimeout, e.cfg.IdleInTxTimeout); err != nil {
+		return nil, fmt.Errorf("tenant setup: %w", err)
+	}
+
+	if in.Result.IsSelect {
+		rows, err := tx.Query(ctx, sqlText, in.Params...)
+		if err != nil {
+			return nil, classifyPgErr(err)
+		}
+		defer rows.Close()
+
+		descs := rows.FieldDescriptions()
+		resp.Columns = make([]string, len(descs))
+		for i, d := range descs {
+			resp.Columns[i] = d.Name
+		}
+
+		for rows.Next() {
+			values, err := rows.Values()
+			if err != nil {
+				return nil, classifyPgErr(err)
+			}
+			resp.Rows = append(resp.Rows, values)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, classifyPgErr(err)
+		}
+		resp.RowsAffected = int64(len(resp.Rows))
+	} else {
+		tag, err := tx.Exec(ctx, sqlText, in.Params...)
+		if err != nil {
+			return nil, classifyPgErr(err)
+		}
+		resp.RowsAffected = tag.RowsAffected()
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, classifyPgErr(err)
+	}
+
+	resp.DurationMS = int(time.Since(start).Milliseconds())
+	return resp, nil
+}
+
+// classifyPgErr unwraps the *pgconn.PgError so the HTTP layer can read the
+// SQLSTATE without re-parsing.
+func classifyPgErr(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return &Error{Pg: pgErr}
+	}
+	return err
+}
+
+// Error wraps a *pgconn.PgError. The HTTP layer maps SQLSTATE classes to
+// HTTP status codes (42501 -> 403, 22xxx -> 400, 23xxx -> 409, etc).
+type Error struct {
+	Pg *pgconn.PgError
+}
+
+func (e *Error) Error() string {
+	if e.Pg == nil {
+		return "unknown postgres error"
+	}
+	return fmt.Sprintf("%s: %s", e.Pg.Code, e.Pg.Message)
+}
+
+// Unwrap exposes the underlying pgconn error so callers can errors.As() it.
+func (e *Error) Unwrap() error { return e.Pg }

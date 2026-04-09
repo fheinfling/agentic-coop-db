@@ -1,0 +1,78 @@
+# Docker Swarm stack — pure swarm semantics (no `profiles:`, external secrets,
+# placement constraints).
+#
+# Deploy with:
+#   docker stack deploy -c deploy/stack.swarm.yml agentcoopdb
+#
+# Pre-requisites:
+#   docker secret create agentcoopdb_postgres_password -
+#   docker secret create agentcoopdb_restic_password -
+#   docker network create --driver overlay --attachable agentic-coop-db_frontend
+#   docker network create --driver overlay --internal agentic-coop-db_backend
+#
+# Single-node by default. For multi-node deployments use placement constraints
+# to pin postgres to a single host with persistent storage.
+
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: agentcoopdb_owner
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_DB: agentcoopdb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    secrets:
+      - source: agentcoopdb_postgres_password
+        target: postgres_password
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  api:
+    image: ghcr.io/fheinfling/agentic-coop-db-server:latest
+    environment:
+      AGENTCOOPDB_HTTP_ADDR: ":8080"
+      AGENTCOOPDB_DATABASE_URL: "postgres://agentcoopdb_gateway@postgres:5432/agentcoopdb?sslmode=disable"
+      AGENTCOOPDB_MIGRATIONS_DATABASE_URL: "postgres://agentcoopdb_owner@postgres:5432/agentcoopdb?sslmode=disable"
+      AGENTCOOPDB_LOG_FORMAT: "json"
+      AGENTCOOPDB_METRICS_ENABLED: "true"
+    networks:
+      - frontend
+      - backend
+    secrets:
+      - source: agentcoopdb_postgres_password
+        target: postgres_password
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        order: start-first
+      restart_policy:
+        condition: any
+
+volumes:
+  postgres-data:
+
+networks:
+  frontend:
+    external: true
+    name: agentic-coop-db_frontend
+  backend:
+    external: true
+    name: agentic-coop-db_backend
+
+secrets:
+  agentcoopdb_postgres_password:
+    external: true
+  agentcoopdb_restic_password:
+    external: true

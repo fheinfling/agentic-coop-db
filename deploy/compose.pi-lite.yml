@@ -1,0 +1,41 @@
+# Raspberry Pi (ARM64, low-mem) override.
+#
+# Tunings:
+#   - postgres uses postgresql.pi-lite.conf with shared_buffers=64MB,
+#     effective_cache_size=192MB, work_mem=2MB, max_connections=40
+#   - api pool size is reduced to 8
+#   - everything is pinned to a memory ceiling so a hot query can't OOM the Pi
+
+services:
+  api:
+    image: ghcr.io/fheinfling/agentic-coop-db-server:latest
+    ports:
+      - "8080:8080"
+    environment:
+      AGENTCOOPDB_DATABASE_MAX_CONNS: "8"
+      AGENTCOOPDB_DATABASE_MIN_CONNS: "1"
+      AGENTCOOPDB_RATE_LIMIT_PER_SECOND: "30"
+      AGENTCOOPDB_RATE_LIMIT_BURST: "60"
+      AGENTCOOPDB_INSECURE_HTTP: "true"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  postgres:
+    environment:
+      # Trust auth: postgres lives only on the internal docker network on
+      # the Pi, and there is no external listener. Same rationale as
+      # compose.local.yml.
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/postgresql.pi-lite.conf:/etc/postgresql/postgresql.conf:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+    deploy:
+      resources:
+        limits:
+          memory: 512M

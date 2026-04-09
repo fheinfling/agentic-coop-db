@@ -1,0 +1,149 @@
+# Single-node cloud profile (hoster-agnostic: Hetzner / DO / AWS Lightsail / bare metal).
+#
+# What this profile adds on top of the base stack:
+#   - caddy in front of the api, terminating TLS via Let's Encrypt
+#   - a backup sidecar that restic-snapshots the database daily
+#   - postgres-exporter for prometheus
+#   - prometheus scraping api + postgres-exporter (no remote write — local TSDB)
+#
+# The api itself is NOT exposed on the host — only caddy is. Postgres binds
+# to a private network only and is unreachable from outside the compose project.
+#
+# DNS bootstrap example (any provider):
+#   1. Point an A record at the host's public IP.
+#   2. export DOMAIN=db.example.com EMAIL=ops@example.com
+#   3. make up-cloud
+#
+# See docs/deploy-cloud.md for worked examples.
+
+services:
+  api:
+    image: ghcr.io/fheinfling/agentic-coop-db-server:latest
+    expose:
+      - "8080"
+    environment:
+      AGENTCOOPDB_LOG_FORMAT: "json"
+      AGENTCOOPDB_LOG_LEVEL: "info"
+      AGENTCOOPDB_METRICS_ENABLED: "true"
+      # Cloud profile uses scram-sha-256 auth on the postgres backend.
+      # The agentcoopdb_gateway role is created by migration 0004 with no
+      # password; the server runs ALTER ROLE WITH PASSWORD on it after
+      # migrations using AGENTCOOPDB_GATEWAY_PASSWORD, then opens the pool
+      # with that same password injected into ConnConfig.
+      AGENTCOOPDB_GATEWAY_PASSWORD_FILE: /run/secrets/agentcoopdb_gateway_password
+      AGENTCOOPDB_OWNER_PASSWORD_FILE: /run/secrets/agentcoopdb_owner_password
+    networks:
+      - frontend
+      - backend
+    secrets:
+      - agentcoopdb_gateway_password
+      - agentcoopdb_owner_password
+
+  postgres:
+    networks:
+      - backend
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/postgresql.cloud.conf:/etc/postgresql/postgresql.conf:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN to the public hostname}
+      EMAIL:  ${EMAIL:?set EMAIL to the operator address (Let's Encrypt account)}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - frontend
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt:
+      - no-new-privileges:true
+
+  backup:
+    image: restic/restic:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:?set RESTIC_REPOSITORY (s3:..., b2:..., sftp:..., or local path)}
+      RESTIC_PASSWORD_FILE: /run/secrets/restic_password
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:-}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:-}
+    volumes:
+      - ./backup:/backup:ro
+      - postgres-data:/var/lib/postgresql/data:ro
+    secrets:
+      - restic_password
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        # Daily backup at 03:00 UTC. backup.sh handles initialization on first run.
+        echo "0 3 * * * /backup/backup.sh" > /etc/crontabs/root
+        crond -f -L /dev/stdout
+    networks:
+      - backend
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_NAME: "postgresql://agentcoopdb_gateway@postgres:5432/agentcoopdb?sslmode=disable"
+    networks:
+      - backend
+    cap_drop: [ALL]
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    networks:
+      - backend
+    cap_drop: [ALL]
+
+volumes:
+  caddy-data:
+  caddy-config:
+  prometheus-data:
+
+networks:
+  frontend:
+  backend:
+    internal: true
+
+secrets:
+  restic_password:
+    file: ./secrets/restic_password.txt
+  # The agentcoopdb_owner role IS the postgres user that the postgres image
+  # creates from POSTGRES_PASSWORD, so we reuse the same secret file the
+  # base compose.yml uses.
+  agentcoopdb_owner_password:
+    file: ./secrets/postgres_password.txt
+  # The agentcoopdb_gateway role gets its own dedicated password. Generate a
+  # fresh one with `head -c 32 /dev/urandom | base64 > deploy/secrets/agentcoopdb_gateway_password.txt`
+  # before running `make up-cloud`.
+  agentcoopdb_gateway_password:
+    file: ./secrets/agentcoopdb_gateway_password.txt
