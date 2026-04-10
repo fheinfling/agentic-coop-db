@@ -192,9 +192,12 @@ func handleVectorSearch(d Doer) toolHandler {
 		if kv, ok := args["k"].(float64); ok && kv > 0 {
 			k = int(kv)
 		}
+		if k > 1000 {
+			return errResult("k must be <= 1000"), nil
+		}
 
 		sql := fmt.Sprintf(
-			`SELECT *, %s <=> $1::vector AS distance FROM %s ORDER BY %s <=> $1::vector LIMIT $2`,
+			`SELECT *, "%s" <=> $1::vector AS distance FROM "%s" ORDER BY "%s" <=> $1::vector LIMIT $2`,
 			vectorCol, table, vectorCol,
 		)
 		result, err := d.SQLExecute(ctx, sql, []any{formatVector(embedding), k}, "")
@@ -230,6 +233,9 @@ func handleVectorUpsert(d Doer) toolHandler {
 		if !ok || len(rows) == 0 {
 			return errResult("rows must be a non-empty array"), nil
 		}
+		if len(rows) > 100 {
+			return errResult("rows must contain at most 100 entries"), nil
+		}
 
 		// Build parameterized INSERT ... ON CONFLICT
 		var valuesClauses []string
@@ -243,7 +249,14 @@ func handleVectorUpsert(d Doer) toolHandler {
 			if id == "" {
 				return errResult(fmt.Sprintf("rows[%d].id is required", i)), nil
 			}
-			meta, _ := row["metadata"].(map[string]any)
+			rawMeta, hasMeta := row["metadata"]
+			if !hasMeta {
+				return errResult(fmt.Sprintf("rows[%d].metadata is required", i)), nil
+			}
+			meta, ok := rawMeta.(map[string]any)
+			if !ok {
+				return errResult(fmt.Sprintf("rows[%d].metadata must be a JSON object", i)), nil
+			}
 			metaJSON, err := json.Marshal(meta)
 			if err != nil {
 				return errResult(fmt.Sprintf("rows[%d].metadata: %v", i, err)), nil
@@ -267,7 +280,7 @@ func handleVectorUpsert(d Doer) toolHandler {
 		}
 
 		sql := fmt.Sprintf(
-			`INSERT INTO %s (%s, metadata, %s) VALUES %s ON CONFLICT (%s) DO UPDATE SET metadata = EXCLUDED.metadata, %s = EXCLUDED.%s`,
+			`INSERT INTO "%s" ("%s", "metadata", "%s") VALUES %s ON CONFLICT ("%s") DO UPDATE SET "metadata" = EXCLUDED."metadata", "%s" = EXCLUDED."%s"`,
 			table, idCol, vectorCol,
 			strings.Join(valuesClauses, ", "),
 			idCol, vectorCol, vectorCol,

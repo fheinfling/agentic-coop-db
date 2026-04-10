@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"sort"
 	"testing"
 )
 
@@ -11,12 +12,29 @@ func TestNewServer_RegistersAllTools(t *testing.T) {
 		t.Fatal("NewServer returned nil")
 	}
 
-	// The server should have all 8 tools registered.
-	// We verify by checking the tool names returned via ListTools.
-	// mcp-go exposes registered tools through the server's internal state.
-	// Since we can't directly inspect, we verify the server was created
-	// without panic and has non-nil state. A more thorough check happens
-	// in integration tests.
+	tools := srv.ListTools()
+	if len(tools) != 8 {
+		t.Errorf("registered tools = %d, want 8", len(tools))
+	}
+
+	want := []string{
+		"describe_table", "health", "list_tables", "rpc_call",
+		"sql_execute", "vector_search", "vector_upsert", "whoami",
+	}
+	var got []string
+	for name := range tools {
+		got = append(got, name)
+	}
+	sort.Strings(got)
+
+	if len(got) != len(want) {
+		t.Fatalf("tool names = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("tool[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
 }
 
 func TestNewServer_NilClientPanics(t *testing.T) {

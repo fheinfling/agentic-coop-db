@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -340,8 +341,8 @@ func TestToolVectorUpsert_BuildsCorrectSQL(t *testing.T) {
 	if fd.sqlCalls != 1 {
 		t.Errorf("sqlCalls = %d, want 1", fd.sqlCalls)
 	}
-	if !strings.Contains(fd.lastSQL, "INSERT INTO documents") {
-		t.Errorf("SQL should INSERT INTO table, got: %s", fd.lastSQL)
+	if !strings.Contains(fd.lastSQL, `INSERT INTO "documents"`) {
+		t.Errorf("SQL should INSERT INTO quoted table, got: %s", fd.lastSQL)
 	}
 	if !strings.Contains(fd.lastSQL, "ON CONFLICT") {
 		t.Errorf("SQL should have ON CONFLICT, got: %s", fd.lastSQL)
@@ -407,6 +408,83 @@ func TestIsSafeIdent(t *testing.T) {
 	}
 }
 
+func TestToolVectorSearch_KLimit(t *testing.T) {
+	fd := &fakeDoer{}
+	h := handleVectorSearch(fd)
+	result := callToolExpectErr(t, h, map[string]any{
+		"table":           "documents",
+		"vector_column":   "embedding",
+		"query_embedding": []any{0.1},
+		"k":               float64(1001),
+	})
+	if fd.sqlCalls != 0 {
+		t.Error("SQL should not be called when k > 1000")
+	}
+	if result != nil {
+		text := resultText(t, result)
+		if !strings.Contains(text, "1000") {
+			t.Errorf("error should mention limit, got: %s", text)
+		}
+	}
+}
+
+func TestToolVectorUpsert_BatchLimit(t *testing.T) {
+	fd := &fakeDoer{}
+	h := handleVectorUpsert(fd)
+
+	rows := make([]any, 101)
+	for i := range rows {
+		rows[i] = map[string]any{"id": fmt.Sprintf("d-%d", i), "metadata": map[string]any{}, "vector": []any{0.1}}
+	}
+	result := callToolExpectErr(t, h, map[string]any{
+		"table":         "documents",
+		"id_column":     "id",
+		"vector_column": "embedding",
+		"rows":          rows,
+	})
+	if fd.sqlCalls != 0 {
+		t.Error("SQL should not be called when rows > 100")
+	}
+	_ = result
+}
+
+func TestToolVectorUpsert_MetadataValidation(t *testing.T) {
+	fd := &fakeDoer{}
+	h := handleVectorUpsert(fd)
+
+	// Missing metadata
+	result := callToolExpectErr(t, h, map[string]any{
+		"table":         "documents",
+		"id_column":     "id",
+		"vector_column": "embedding",
+		"rows": []any{
+			map[string]any{"id": "doc-1", "vector": []any{0.1}},
+		},
+	})
+	if fd.sqlCalls != 0 {
+		t.Error("SQL should not be called for missing metadata")
+	}
+	if result != nil {
+		text := resultText(t, result)
+		if !strings.Contains(text, "metadata") {
+			t.Errorf("error should mention metadata, got: %s", text)
+		}
+	}
+
+	// Non-object metadata
+	result = callToolExpectErr(t, h, map[string]any{
+		"table":         "documents",
+		"id_column":     "id",
+		"vector_column": "embedding",
+		"rows": []any{
+			map[string]any{"id": "doc-1", "metadata": "not-an-object", "vector": []any{0.1}},
+		},
+	})
+	if fd.sqlCalls != 0 {
+		t.Error("SQL should not be called for non-object metadata")
+	}
+}
+
 // formatVector is tested indirectly through vector tool tests,
 // but we verify the output format explicitly here.
 func TestFormatVector(t *testing.T) {
@@ -417,4 +495,3 @@ func TestFormatVector(t *testing.T) {
 		t.Errorf("formatVector = %q, want %q", got, want)
 	}
 }
-

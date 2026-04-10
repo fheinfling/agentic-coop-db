@@ -199,7 +199,8 @@ func (c *Client) doAndDecode(req *http.Request, dest any) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	respBody, err := io.ReadAll(resp.Body)
+	const maxResponseSize = 10 << 20 // 10 MB
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
 		return fmt.Errorf("read response: %w", err)
 	}

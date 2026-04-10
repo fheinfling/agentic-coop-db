@@ -32,7 +32,7 @@ Or with Docker (the image includes the binary at `/app/agentic-coop-db-mcp`).
 |----------|----------|-------------|
 | `AGENTCOOPDB_GATEWAY_URL` | Yes | Base URL of the gateway (e.g. `https://db.example.com`) |
 | `AGENTCOOPDB_API_KEY` | Yes* | API key (`acd_<env>_<id>_<secret>`) |
-| `AGENTCOOPDB_API_KEY_FILE` | No | File path containing the API key (docker secret pattern; overrides `AGENTCOOPDB_API_KEY`) |
+| `AGENTCOOPDB_API_KEY_FILE` | No | File path containing the API key (docker secret pattern; used when `AGENTCOOPDB_API_KEY` is not set) |
 
 *Either `AGENTCOOPDB_API_KEY` or `AGENTCOOPDB_API_KEY_FILE` is required.
 
