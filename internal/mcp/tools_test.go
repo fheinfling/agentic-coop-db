@@ -472,7 +472,7 @@ func TestToolVectorUpsert_MetadataValidation(t *testing.T) {
 	}
 
 	// Non-object metadata
-	result = callToolExpectErr(t, h, map[string]any{
+	result2 := callToolExpectErr(t, h, map[string]any{
 		"table":         "documents",
 		"id_column":     "id",
 		"vector_column": "embedding",
@@ -482,6 +482,12 @@ func TestToolVectorUpsert_MetadataValidation(t *testing.T) {
 	})
 	if fd.sqlCalls != 0 {
 		t.Error("SQL should not be called for non-object metadata")
+	}
+	if result2 != nil {
+		text := resultText(t, result2)
+		if !strings.Contains(text, "metadata") {
+			t.Errorf("error should mention metadata, got: %s", text)
+		}
 	}
 }
 
