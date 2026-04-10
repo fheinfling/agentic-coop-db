@@ -330,6 +330,8 @@ usage minimal.
 
 ## Run it on…
 
+Each profile bundles its own PostgreSQL + pgvector instance:
+
 | Profile      | File                              | Use case                                  |
 |--------------|-----------------------------------|-------------------------------------------|
 | `local`      | `deploy/compose.local.yml`        | Dev box, integration tests                |
@@ -342,6 +344,12 @@ make up-local        # localhost:8080, no TLS
 make up-pi           # ARM64-tuned postgres, low mem
 make up-cloud        # Caddy auto-TLS, backups, prometheus
 ```
+
+**Already have Postgres?** Use
+[`deploy/compose.external-pg.yml`](deploy/compose.external-pg.yml) instead —
+it runs only the API container and connects to your existing PostgreSQL 16+
+instance (Coolify, Railway, RDS, Neon, etc.). Your platform provides TLS,
+backups, and monitoring.
 
 See [`docs/deploy-cloud.md`](docs/deploy-cloud.md) for worked examples on
 Hetzner, DigitalOcean, AWS Lightsail, and bare metal.
