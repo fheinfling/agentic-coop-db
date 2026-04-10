@@ -5,6 +5,21 @@ All notable changes to Agentic Coop DB are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/fheinfling/agentic-coop-db/compare/v0.1.0...v0.2.0) (2026-04-10)
+
+
+### Features
+
+* add AGENTCOOPDB_AUDIT_DISABLED flag ([#18](https://github.com/fheinfling/agentic-coop-db/issues/18)) ([ae44653](https://github.com/fheinfling/agentic-coop-db/commit/ae44653dc9e30f7aa97a2668b41bc19b86b17f6a))
+* add MCP server for Claude Desktop / Claude Code / Cursor ([#22](https://github.com/fheinfling/agentic-coop-db/issues/22)) ([2ddd1ca](https://github.com/fheinfling/agentic-coop-db/commit/2ddd1ca0a08c72206794a90687d601a6e965ae97))
+
+
+### Bug Fixes
+
+* auto-grant CREATE on public schema for PG 15+ external databases ([e441ac3](https://github.com/fheinfling/agentic-coop-db/commit/e441ac3c577d107d99ec04a14c44f29fa1cd5a94))
+* fail with actionable message when CREATE on public schema is denied ([2c6f7dd](https://github.com/fheinfling/agentic-coop-db/commit/2c6f7dd3ad72493d535c2a3954976651ca691735))
+* strengthen TestWrite_Disabled to prove disabled short-circuit ([#19](https://github.com/fheinfling/agentic-coop-db/issues/19)) ([78f070b](https://github.com/fheinfling/agentic-coop-db/commit/78f070b6bdf9b80aaa02a534e7d06413ee0b6a6f))
+
 ## [Unreleased]
 
 ## [0.1.0] — 2026-04-08
