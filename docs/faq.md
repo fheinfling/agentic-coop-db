@@ -55,6 +55,21 @@ sure the extension is actually installed in the postgres image — for
 custom extensions, build your own postgres image and reference it in the
 compose file.
 
+### I get "permission denied for schema public" on a managed Postgres (Coolify, RDS, …)
+
+PostgreSQL 15+ revoked the default `CREATE` privilege on the `public` schema.
+When the migrations user is not a superuser, golang-migrate cannot create its
+`schema_migrations` tracking table.
+
+Since v0.1 the server handles this automatically: `EnsureOwnerRole` grants
+`CREATE ON SCHEMA public` to the connecting user before migrations run. If
+you see this error on an older build, either rebuild or run this one-liner
+against your database:
+
+```sql
+GRANT CREATE ON SCHEMA public TO "<your-migrations-user>";
+```
+
 ### Is this production-ready?
 
 v1 is single-node and intentionally minimal. It is appropriate for

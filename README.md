@@ -349,7 +349,8 @@ make up-cloud        # Caddy auto-TLS, backups, prometheus
 [`deploy/compose.external-pg.yml`](deploy/compose.external-pg.yml) instead —
 it runs only the API container and connects to your existing PostgreSQL 16+
 instance (Coolify, Railway, RDS, Neon, etc.). Your platform provides TLS,
-backups, and monitoring.
+backups, and monitoring. The server automatically handles the PG 15+ `CREATE`
+privilege change on the `public` schema — no manual grants required.
 
 See [`docs/deploy-cloud.md`](docs/deploy-cloud.md) for worked examples on
 Hetzner, DigitalOcean, AWS Lightsail, and bare metal.

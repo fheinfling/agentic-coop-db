@@ -272,6 +272,17 @@ END$$;`
 	if _, err := conn.Exec(ctx, stmt); err != nil {
 		return fmt.Errorf("create agentcoopdb_owner: %w", err)
 	}
+
+	// Postgres 15+ revoked CREATE on the public schema from PUBLIC.
+	// On managed / external Postgres instances the migrations user is
+	// often not a superuser and lacks CREATE on public, which prevents
+	// golang-migrate from creating its schema_migrations tracking table.
+	// This is a no-op when the privilege already exists.
+	const grantPublic = `GRANT CREATE ON SCHEMA public TO CURRENT_USER`
+	if _, err := conn.Exec(ctx, grantPublic); err != nil {
+		slog.Default().Warn("could not grant CREATE on public schema (non-fatal if already permitted)", "err", err)
+	}
+
 	return nil
 }
 
