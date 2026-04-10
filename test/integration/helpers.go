@@ -155,7 +155,7 @@ func StartHarness(t *testing.T) *Harness {
 	require.NoError(t, err)
 	mw := auth.NewMiddleware(store, cache, logger)
 	metrics := observability.NewMetrics(cache.Len)
-	auditor := audit.NewWriter(pool, logger, false)
+	auditor := audit.NewWriter(pool, logger, false, false)
 	validator := sqlpkg.NewValidator(sqlpkg.ValidatorConfig{
 		MaxStatementBytes:  cfg.MaxStatementBytes,
 		MaxStatementParams: cfg.MaxStatementParams,
