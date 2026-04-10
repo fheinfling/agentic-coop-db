@@ -3,7 +3,10 @@ package audit
 import (
 	"context"
 	"encoding/hex"
+	"log/slog"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func TestHashOrEmpty(t *testing.T) {
@@ -171,9 +174,18 @@ func TestNewWriter_Disabled(t *testing.T) {
 	}
 }
 
+// panicPool implements dbPool and panics if Exec is ever called, making it
+// observable when the disabled short-circuit is bypassed in tests.
+type panicPool struct{}
+
+func (panicPool) Exec(_ context.Context, _ string, _ ...any) (pgconn.CommandTag, error) {
+	panic("audit: Exec called on a disabled Writer — disabled short-circuit is broken")
+}
+
 func TestWrite_Disabled(t *testing.T) {
-	w := NewWriter(nil, nil, true, false)
-	// Should not panic; Write logs to slog and returns early when disabled.
+	// Use a non-nil pool that panics on Exec so the test fails if the disabled
+	// flag does not short-circuit before the DB insert.
+	w := &Writer{pool: panicPool{}, disabled: true, logger: slog.Default()}
 	w.Write(context.Background(), Entry{
 		RequestID:  "req-disabled",
 		Endpoint:   "/query",
