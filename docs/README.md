@@ -7,6 +7,7 @@ Start here:
 - [`security.md`](security.md) — threat model and reporting process
 - [`rls.md`](rls.md) — multi-tenant pattern with row-level security
 - [`rpc-authoring.md`](rpc-authoring.md) — when to register an RPC instead of using `/v1/sql/execute`
+- [`mcp.md`](mcp.md) — MCP server for Claude Desktop / Claude Code / Cursor
 - [`faq.md`](faq.md) — frequently asked questions
 
 Deployment guides:

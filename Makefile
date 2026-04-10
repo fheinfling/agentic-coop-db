@@ -44,13 +44,16 @@ help: ## show this help
 
 # ---- build -------------------------------------------------------------------
 
-build: build-server build-migrate build-lint-migrations ## build all Go binaries
+build: build-server build-migrate build-mcp build-lint-migrations ## build all Go binaries
 
 build-server: ## build the API server binary
 	$(GO) build $(GO_BUILD_FLAGS) -o bin/agentic-coop-db-server ./cmd/server
 
 build-migrate: ## build the standalone migrator
 	$(GO) build $(GO_BUILD_FLAGS) -o bin/agentic-coop-db-migrate ./cmd/migrate
+
+build-mcp: ## build the MCP server binary
+	CGO_ENABLED=0 $(GO) build $(GO_BUILD_FLAGS) -o bin/agentic-coop-db-mcp ./cmd/mcp
 
 build-lint-migrations: ## build the migration linter
 	$(GO) build -o bin/lint-migrations ./scripts/lint-migrations
@@ -131,7 +134,7 @@ clean: ## remove build artifacts
 	rm -rf bin/ dist/ build/ coverage.*
 	cd clients/python && rm -rf dist/ build/ *.egg-info/
 
-.PHONY: help build build-server build-migrate build-lint-migrations build-python \
+.PHONY: help build build-server build-migrate build-mcp build-lint-migrations build-python \
         lint lint-go lint-python lint-migrations \
         test test-unit test-integration test-e2e \
         up-local up-pi up-cloud swarm-deploy down logs \

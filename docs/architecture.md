@@ -21,6 +21,25 @@ wires the layers together.
 
 ```
 client ──HTTPS──► caddy ──HTTP──► api ──pgx──► postgres
+```
+
+### MCP adapter
+
+The MCP server (`cmd/mcp/`) is a standalone binary that sits **outside** the
+`internal/` boundary. It is just another HTTP client, like the Python SDK:
+
+```
+agent ──MCP/stdio──► agentic-coop-db-mcp ──HTTPS──► caddy ──HTTP──► api ──pgx──► postgres
+```
+
+Every MCP tool call results in an authenticated HTTP request, so the full
+middleware chain (auth, rate limiting, tenant isolation, validation, audit)
+applies. See [`docs/mcp.md`](mcp.md).
+
+### Gateway request flow (detail)
+
+```
+client ──HTTPS──► caddy ──HTTP──► api ──pgx──► postgres
                                   │
                                   │  1. parse Authorization header (auth.ParseBearer)
                                   │  2. resolve key (auth.Store + auth.VerifyCache)
@@ -88,6 +107,7 @@ Filesystem/network escape functions (`pg_read_file`, `lo_import`,
 | Config (env vars)             | `internal/config/`                |
 | slog/prom/optional OTEL       | `internal/observability/`         |
 | ldflags-injected build info   | `internal/version/`               |
+| MCP server adapter            | `internal/mcp/`                   |
 
 Each package has a `doc.go` that describes its responsibilities and
 collaboration boundaries.

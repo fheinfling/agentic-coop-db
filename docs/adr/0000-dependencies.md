@@ -20,6 +20,7 @@ this document. CI fails on dependency drift.
 | `github.com/google/uuid`                        | UUIDv4 minting for audit logs and key IDs                                 |
 | `log/slog`                                      | Standard library; no third-party log dep                                  |
 | `github.com/prometheus/client_golang`           | The de-facto prometheus instrumentation                                   |
+| `github.com/mark3labs/mcp-go`                    | MCP protocol implementation for the standalone MCP server adapter (`internal/mcp/` + `cmd/mcp/` only) |
 | `github.com/stretchr/testify`                   | `require` for clean test assertions                                       |
 | `github.com/testcontainers/testcontainers-go`   | Real Postgres in integration tests                                        |
 

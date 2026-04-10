@@ -64,7 +64,13 @@ RUN --mount=type=cache,target=/go/pkg/mod \
       -o /out/agentic-coop-db-server ./cmd/server && \
     go build -trimpath \
       -ldflags "-s -w -extldflags '-static'" \
-      -o /out/agentic-coop-db-migrate ./cmd/migrate
+      -o /out/agentic-coop-db-migrate ./cmd/migrate && \
+    CGO_ENABLED=0 go build -trimpath \
+      -ldflags "-s -w \
+        -X github.com/fheinfling/agentic-coop-db/internal/version.Version=${VERSION} \
+        -X github.com/fheinfling/agentic-coop-db/internal/version.Commit=${COMMIT} \
+        -X github.com/fheinfling/agentic-coop-db/internal/version.BuildDate=${BUILD_DATE}" \
+      -o /out/agentic-coop-db-mcp ./cmd/mcp
 
 # ---- runtime -----------------------------------------------------------------
 # Alpine instead of distroless so operators can `docker exec` into the
@@ -85,6 +91,7 @@ WORKDIR /app
 
 COPY --from=builder /out/agentic-coop-db-server /app/agentic-coop-db-server
 COPY --from=builder /out/agentic-coop-db-migrate /app/agentic-coop-db-migrate
+COPY --from=builder /out/agentic-coop-db-mcp /app/agentic-coop-db-mcp
 COPY migrations /app/migrations
 COPY sql /app/sql
 

@@ -255,6 +255,39 @@ vectors = db.select("""
 This makes Agentic Coop DB a natural fit for agents that need to understand and
 adapt to the schema they're working with.
 
+### MCP Server (Claude Desktop / Claude Code / Cursor)
+
+For MCP-compatible agents, a standalone MCP server binary is included. It
+proxies tool calls to the gateway over HTTPS — every call goes through the
+full auth/rate-limit/tenant/validator/audit chain.
+
+**Build:**
+
+```bash
+make build-mcp    # produces bin/agentic-coop-db-mcp
+```
+
+**Configure your MCP client** (e.g. Claude Desktop `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "agentic-coop-db": {
+      "command": "/path/to/agentic-coop-db-mcp",
+      "env": {
+        "AGENTCOOPDB_GATEWAY_URL": "https://db.example.com",
+        "AGENTCOOPDB_API_KEY": "acd_live_<id>_<secret>"
+      }
+    }
+  }
+}
+```
+
+**Available tools:** `sql_execute`, `rpc_call`, `list_tables`,
+`describe_table`, `vector_search`, `vector_upsert`, `whoami`, `health`.
+
+Full reference: [`docs/mcp.md`](docs/mcp.md).
+
 ---
 
 ## How it stays safe
@@ -373,6 +406,7 @@ Full reference: [`docs/api.md`](docs/api.md).
 
 - `cmd/server` — API server entrypoint
 - `cmd/migrate` — standalone migrator (also embedded in the server)
+- `cmd/mcp` — MCP server binary (proxy to the gateway)
 - `internal/` — implementation (clean layered architecture)
 - `migrations/` — numbered SQL migrations (golang-migrate)
 - `clients/python` — Python SDK + CLI (`pip install agentic-coop-db`)
@@ -388,6 +422,7 @@ Full reference: [`docs/api.md`](docs/api.md).
 - [`docs/api.md`](docs/api.md) — endpoint reference + curl examples
 - [`docs/security.md`](docs/security.md) — threat model + reporting
 - [`docs/rls.md`](docs/rls.md) — multi-tenant pattern with row-level security
+- [`docs/mcp.md`](docs/mcp.md) — MCP server for Claude Desktop / Claude Code / Cursor
 - [`docs/rpc-authoring.md`](docs/rpc-authoring.md) — when to register an RPC
 - [`docs/deploy-local.md`](docs/deploy-local.md) — local dev
 - [`docs/deploy-pi-lite.md`](docs/deploy-pi-lite.md) — Raspberry Pi

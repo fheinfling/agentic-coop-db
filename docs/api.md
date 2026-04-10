@@ -4,6 +4,9 @@ All endpoints under `/v1` require an `Authorization: Bearer acd_<env>_<id>_<secr
 header. Top-level endpoints (`/healthz`, `/readyz`, `/metrics`) are
 unauthenticated.
 
+> **MCP-compatible agents:** Instead of calling the HTTP API directly, you can
+> use the [MCP server](mcp.md) which exposes these endpoints as MCP tools.
+
 ## POST /v1/sql/execute
 
 Forward a parameterised SQL statement.
