@@ -274,13 +274,24 @@ END$$;`
 	}
 
 	// Postgres 15+ revoked CREATE on the public schema from PUBLIC.
-	// On managed / external Postgres instances the migrations user is
-	// often not a superuser and lacks CREATE on public, which prevents
-	// golang-migrate from creating its schema_migrations tracking table.
-	// This is a no-op when the privilege already exists.
+	// On managed / external Postgres instances the migrations user may
+	// lack CREATE on public, which prevents golang-migrate from creating
+	// its schema_migrations table and the actual migrations from creating
+	// tables. Try to grant the privilege; if the user is a superuser or
+	// the database owner this succeeds silently.
 	const grantPublic = `GRANT CREATE ON SCHEMA public TO CURRENT_USER`
 	if _, err := conn.Exec(ctx, grantPublic); err != nil {
-		slog.Default().Warn("could not grant CREATE on public schema (non-fatal if already permitted)", "err", err)
+		// Check whether we actually have CREATE on public already
+		// (superusers always do, even without an explicit GRANT).
+		var hasCreate bool
+		checkErr := conn.QueryRow(ctx,
+			`SELECT has_schema_privilege(current_user, 'public', 'CREATE')`).Scan(&hasCreate)
+		if checkErr != nil || !hasCreate {
+			return fmt.Errorf("migrations user cannot CREATE in the public schema "+
+				"(PostgreSQL 15+ revoked this by default). Connect to the database as a "+
+				"superuser and run: GRANT CREATE ON SCHEMA public TO %q",
+				conn.Config().User)
+		}
 	}
 
 	return nil
