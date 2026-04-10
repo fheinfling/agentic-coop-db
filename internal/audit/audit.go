@@ -13,8 +13,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// dbPool is the subset of pgxpool.Pool used by Writer, allowing test injection.
+type dbPool interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+}
 
 // Entry is a single audit record. The fields map 1:1 to audit_logs columns.
 type Entry struct {
@@ -35,7 +41,7 @@ type Entry struct {
 // Writer writes audit rows. Failures are logged but never propagated to the
 // caller — auditing is best-effort.
 type Writer struct {
-	pool       *pgxpool.Pool
+	pool       dbPool
 	logger     *slog.Logger
 	disabled   bool
 	includeSQL bool
@@ -47,7 +53,11 @@ func NewWriter(pool *pgxpool.Pool, logger *slog.Logger, disabled, includeSQL boo
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Writer{pool: pool, logger: logger, disabled: disabled, includeSQL: includeSQL}
+	w := &Writer{logger: logger, disabled: disabled, includeSQL: includeSQL}
+	if pool != nil {
+		w.pool = pool
+	}
+	return w
 }
 
 // Write inserts the entry. Always logs the structured form to slog as well.
