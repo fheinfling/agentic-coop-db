@@ -183,6 +183,9 @@ The gateway is a natural fit for AI agent workloads:
 
 ```bash
 pip install agentic-coop-db
+
+# Or install directly from GitHub:
+pip install "agentic-coop-db @ git+https://github.com/fheinfling/agentic-coop-db.git#subdirectory=clients/python"
 ```
 
 **3. Connect:**

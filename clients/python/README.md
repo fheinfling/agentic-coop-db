@@ -20,6 +20,12 @@ rows = db.select("SELECT * FROM notes WHERE owner = $1", ["alice"])
 pip install agentic-coop-db
 ```
 
+Or install directly from GitHub (the Python client lives in a subdirectory):
+
+```bash
+pip install "agentic-coop-db @ git+https://github.com/fheinfling/agentic-coop-db.git#subdirectory=clients/python"
+```
+
 ## CLI
 
 ```bash
