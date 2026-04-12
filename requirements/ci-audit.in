@@ -1,0 +1,3 @@
+# CI audit tools — input for pip-compile.
+# Regenerate: pip-compile --generate-hashes --allow-unsafe --no-emit-index-url --strip-extras --output-file=ci-audit.txt ci-audit.in
+pip-audit==2.10.0

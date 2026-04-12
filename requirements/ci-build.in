@@ -1,0 +1,4 @@
+# CI build tools — input for pip-compile.
+# Regenerate: pip-compile --generate-hashes --allow-unsafe --no-emit-index-url --strip-extras --output-file=ci-build.txt ci-build.in
+pip==26.0.1
+build==1.4.3
