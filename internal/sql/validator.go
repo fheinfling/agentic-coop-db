@@ -50,6 +50,11 @@ type Result struct {
 	// a CTE that performs a write, for VALUES, EXPLAIN, etc.
 	IsSelect bool
 
+	// HasReturning is true when an INSERT, UPDATE, or DELETE includes a
+	// RETURNING clause. The executor uses this to read back rows instead
+	// of only reporting rows_affected.
+	HasReturning bool
+
 	// PlaceholderCount is the number of distinct $N placeholders found in
 	// the AST. Equal to len(params) by construction.
 	PlaceholderCount int
@@ -90,6 +95,7 @@ func (v *Validator) Validate(sqlText string, params []any) (*Result, error) {
 	stmt := tree.Stmts[0].Stmt
 	cmd := classify(stmt)
 	isSelect := cmd == "SELECT"
+	hasReturning := returningPresent(stmt)
 
 	placeholders, err := countPlaceholders(sqlText)
 	if err != nil {
@@ -105,6 +111,7 @@ func (v *Validator) Validate(sqlText string, params []any) (*Result, error) {
 	return &Result{
 		Command:          cmd,
 		IsSelect:         isSelect,
+		HasReturning:     hasReturning,
 		PlaceholderCount: placeholders,
 	}, nil
 }
@@ -168,6 +175,24 @@ func classify(node *pg_query.Node) string {
 	default:
 		_ = n
 		return "OTHER"
+	}
+}
+
+// returningPresent reports whether the top-level DML node contains a
+// RETURNING clause. Only INSERT, UPDATE, and DELETE can carry one.
+func returningPresent(node *pg_query.Node) bool {
+	if node == nil {
+		return false
+	}
+	switch n := node.Node.(type) {
+	case *pg_query.Node_InsertStmt:
+		return len(n.InsertStmt.GetReturningList()) > 0
+	case *pg_query.Node_UpdateStmt:
+		return len(n.UpdateStmt.GetReturningList()) > 0
+	case *pg_query.Node_DeleteStmt:
+		return len(n.DeleteStmt.GetReturningList()) > 0
+	default:
+		return false
 	}
 }
 

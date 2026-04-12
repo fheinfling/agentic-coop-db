@@ -197,6 +197,41 @@ func TestValidate_ClassifyAdditionalStatements(t *testing.T) {
 	}
 }
 
+func TestValidate_HasReturning(t *testing.T) {
+	v := NewValidator(ValidatorConfig{})
+
+	cases := []struct {
+		name          string
+		sql           string
+		params        []any
+		wantCmd       string
+		wantReturning bool
+	}{
+		{"insert returning", "INSERT INTO t (a) VALUES ($1) RETURNING id", []any{1}, "INSERT", true},
+		{"insert returning star", "INSERT INTO t (a) VALUES ($1) RETURNING *", []any{1}, "INSERT", true},
+		{"insert no returning", "INSERT INTO t (a) VALUES ($1)", []any{1}, "INSERT", false},
+		{"update returning", "UPDATE t SET a=$1 WHERE id=$2 RETURNING a", []any{1, 2}, "UPDATE", true},
+		{"update no returning", "UPDATE t SET a=$1 WHERE id=$2", []any{1, 2}, "UPDATE", false},
+		{"delete returning", "DELETE FROM t WHERE id=$1 RETURNING *", []any{1}, "DELETE", true},
+		{"delete no returning", "DELETE FROM t WHERE id=$1", []any{1}, "DELETE", false},
+		{"select is not returning", "SELECT 1", nil, "SELECT", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := v.Validate(tc.sql, tc.params)
+			if err != nil {
+				t.Fatalf("Validate(%q): %v", tc.sql, err)
+			}
+			if res.Command != tc.wantCmd {
+				t.Errorf("Command: got %q, want %q", res.Command, tc.wantCmd)
+			}
+			if res.HasReturning != tc.wantReturning {
+				t.Errorf("HasReturning: got %v, want %v", res.HasReturning, tc.wantReturning)
+			}
+		})
+	}
+}
+
 func TestValidationError_Error(t *testing.T) {
 	e := &ValidationError{Code: "parse_error", Message: "syntax error"}
 	want := "parse_error: syntax error"

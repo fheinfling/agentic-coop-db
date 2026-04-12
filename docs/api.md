@@ -37,8 +37,10 @@ Forward a parameterised SQL statement.
 }
 ```
 
-For `SELECT`, `columns` and `rows` are populated. For DDL/DCL the response
-shape is the same; `rows_affected` may be 0.
+For `SELECT` and DML with a `RETURNING` clause (e.g.
+`INSERT ... RETURNING *`), `columns` and `rows` are populated. For plain
+DML without `RETURNING` and for DDL/DCL the response shape is the same;
+`rows_affected` may be 0.
 
 **Errors**
 

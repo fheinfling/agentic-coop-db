@@ -83,7 +83,7 @@ func (e *Executor) Execute(ctx context.Context, in ExecuteInput) (*Response, err
 		return nil, fmt.Errorf("tenant setup: %w", err)
 	}
 
-	if in.Result.IsSelect {
+	if in.Result.IsSelect || in.Result.HasReturning {
 		rows, err := tx.Query(ctx, sqlText, in.Params...)
 		if err != nil {
 			return nil, classifyPgErr(err)
