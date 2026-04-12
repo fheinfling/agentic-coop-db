@@ -5,6 +5,16 @@ All notable changes to Agentic Coop DB are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1](https://github.com/fheinfling/Agentic-Coop-DB/compare/v0.3.0...v0.3.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* add GH_REPO to release-binaries upload and remove silent failure ([ab606b4](https://github.com/fheinfling/Agentic-Coop-DB/commit/ab606b427cfb9966b6ae6e4e2890d7794ec95255))
+* add workflow_dispatch to release-binaries and use release tag ([b058c94](https://github.com/fheinfling/Agentic-Coop-DB/commit/b058c94317f14f23d4f1b12bfa9798a87cc05d96))
+* trigger release-binaries on release event, not tag push ([b156d91](https://github.com/fheinfling/Agentic-Coop-DB/commit/b156d913ccd7dfc53bb72a9d369cd7cac9b57f12))
+* use per-platform glob in release-binaries upload step ([cce6982](https://github.com/fheinfling/Agentic-Coop-DB/commit/cce6982bab7179aeb126169f48ce11bf0428d99c))
+
 ## [0.3.0](https://github.com/fheinfling/Agentic-Coop-DB/compare/v0.2.2...v0.3.0) (2026-04-12)
 
 
