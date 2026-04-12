@@ -3,8 +3,16 @@ name: release-binaries
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.3.0)"
+        required: true
 
 permissions: {}
+
+env:
+  TAG: ${{ inputs.tag || github.event.release.tag_name }}
 
 jobs:
   build:
@@ -21,6 +29,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ env.TAG }}
 
       - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
         with:
@@ -32,7 +42,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG#v}"
           COMMIT="$(git rev-parse --short HEAD)"
           BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           MODULE="github.com/fheinfling/agentic-coop-db"
@@ -56,7 +66,7 @@ jobs:
       - name: upload
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.ref_name }}" *.tar.gz *.zip --clobber 2>/dev/null || true
+        run: gh release upload "${TAG}" *.tar.gz *.zip --clobber 2>/dev/null || true
 
   checksums:
     needs: build
@@ -68,7 +78,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release download "${{ github.ref_name }}" --dir assets
+        run: gh release download "${TAG}" --dir assets
 
       - name: generate checksums
         run: cd assets && sha256sum * > checksums.txt
@@ -77,4 +87,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ github.ref_name }}" assets/checksums.txt --clobber
+        run: gh release upload "${TAG}" assets/checksums.txt --clobber
