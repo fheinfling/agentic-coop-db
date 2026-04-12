@@ -10,7 +10,7 @@
 # Override variables on the command line, e.g.:
 #   make up-cloud DOMAIN=db.example.com EMAIL=ops@example.com
 
-SHELL          := /usr/bin/env bash
+SHELL          := /usr/bin/bash
 .ONESHELL:
 .SHELLFLAGS    := -eu -o pipefail -c
 .DEFAULT_GOAL  := help
