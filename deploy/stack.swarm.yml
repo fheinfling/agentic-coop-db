@@ -44,8 +44,13 @@ services:
       AGENTCOOPDB_HTTP_ADDR: ":8080"
       AGENTCOOPDB_DATABASE_URL: "postgres://agentcoopdb_gateway@postgres:5432/agentcoopdb?sslmode=disable"
       AGENTCOOPDB_MIGRATIONS_DATABASE_URL: "postgres://agentcoopdb_owner@postgres:5432/agentcoopdb?sslmode=disable"
+      AGENTCOOPDB_OWNER_PASSWORD_FILE: "/run/secrets/postgres_password"
+      AGENTCOOPDB_GATEWAY_PASSWORD_FILE: "/run/secrets/postgres_password"
       AGENTCOOPDB_LOG_FORMAT: "json"
       AGENTCOOPDB_METRICS_ENABLED: "true"
+      # TLS is terminated by the reverse proxy on the frontend overlay
+      # network; the API container itself speaks plain HTTP.
+      AGENTCOOPDB_INSECURE_HTTP: "true"
     networks:
       - frontend
       - backend

@@ -3,6 +3,10 @@
 [![CI](https://github.com/fheinfling/agentic-coop-db/actions/workflows/ci.yml/badge.svg)](https://github.com/fheinfling/agentic-coop-db/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
+> **Ever felt the need to connect your AI agents to an actual database?**
+> Agentic Coop DB does exactly that — give every agent a secure SQL interface
+> over HTTPS, backed by real Postgres, with nothing more than an API key.
+
 Multiple AI agents working on the same project need a shared place to store and
 query structured data — but you can't expose Postgres on the public internet.
 Agentic Coop DB lets your agents collaborate on a remote Postgres + pgvector
