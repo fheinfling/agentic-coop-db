@@ -27,12 +27,20 @@ services:
   postgres:
     ports:
       - "127.0.0.1:5432:5432"
+    cap_drop: !override []
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
     environment:
       # Local-only: use trust auth for in-cluster connections so neither
       # agentcoopdb_owner nor agentcoopdb_gateway needs a password. POSTGRES_PASSWORD
       # is still required by the postgres image's docker-entrypoint, but it
       # is never actually used as a credential when HOST_AUTH_METHOD=trust.
       POSTGRES_PASSWORD: "dev-only-not-a-real-password"
+      POSTGRES_PASSWORD_FILE: ""
       POSTGRES_HOST_AUTH_METHOD: "trust"
     secrets: []
     command:
