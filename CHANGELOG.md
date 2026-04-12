@@ -5,6 +5,15 @@ All notable changes to Agentic Coop DB are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/fheinfling/Agentic-Coop-DB/compare/v0.2.0...v0.2.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* pin dependencies to commit SHAs and image digests (OpenSSF Scorecard) ([#25](https://github.com/fheinfling/Agentic-Coop-DB/issues/25)) ([ad1eeb8](https://github.com/fheinfling/Agentic-Coop-DB/commit/ad1eeb8fe0680ade86e25e63539e087c11e7eabd))
+* pin pip installs by hash to satisfy Scorecard Pinned-Dependencies ([#26](https://github.com/fheinfling/Agentic-Coop-DB/issues/26)) ([00f6f6a](https://github.com/fheinfling/Agentic-Coop-DB/commit/00f6f6acae7ce358622f4253dc4693902aead4b9))
+* return rows for RETURNING clauses, fix Makefile and local compose ([#23](https://github.com/fheinfling/Agentic-Coop-DB/issues/23)) ([53d2058](https://github.com/fheinfling/Agentic-Coop-DB/commit/53d205885c00812d1ebed9fdc42d043d487a5751))
+
 ## [0.2.0](https://github.com/fheinfling/agentic-coop-db/compare/v0.1.0...v0.2.0) (2026-04-10)
 
 
