@@ -104,7 +104,7 @@ jobs:
           cache: pip
       - name: install
         run: |
-          python -m pip install --upgrade pip==26.0.1 build==1.4.3
+          python -m pip install --require-hashes -r requirements/ci-build.txt
           pip install -e "clients/python[dev]"
       - name: ruff
         run: cd clients/python && ruff check .
@@ -116,6 +116,6 @@ jobs:
         run: cd clients/python && pytest -q
       - name: pip-audit
         run: |
-          pip install pip-audit==2.10.0
+          pip install --require-hashes -r requirements/ci-audit.txt
           pip freeze | grep -v -e '^-e ' -e 'agentic.coop.db' | pip-audit -r /dev/stdin
         if: matrix.python == '3.12'
