@@ -5,6 +5,13 @@ All notable changes to Agentic Coop DB are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/fheinfling/Agentic-Coop-DB/compare/v0.2.2...v0.3.0) (2026-04-12)
+
+
+### Features
+
+* easy MCP install with pre-built binaries ([#29](https://github.com/fheinfling/Agentic-Coop-DB/issues/29)) ([821d267](https://github.com/fheinfling/Agentic-Coop-DB/commit/821d267e2495bfb0f2281f629b4b2d481925e9c6))
+
 ## [0.2.2](https://github.com/fheinfling/Agentic-Coop-DB/compare/v0.2.1...v0.2.2) (2026-04-12)
 
 
