@@ -33,7 +33,8 @@ ARG ALPINE_VERSION=3.22
 # but keeps the Dockerfile simple. CI's `buildx` job uses
 # `docker/setup-qemu-action` which provides the binfmt handlers.
 
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
+# Digest must be updated when GO_VERSION or ALPINE_VERSION change.
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:c259ff7ffa06f1fd161a6abfa026573cf00f64cfd959c6d2a9d43e3ff63e8729 AS builder
 
 ARG VERSION=0.1.0-dev
 ARG COMMIT=unknown
@@ -78,7 +79,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # Go binary doesn't need musl, but the shell + coreutils cost ~3 MB and
 # save a lot of operational pain on platforms like Coolify that rely on
 # exec for one-off commands.
-FROM alpine:${ALPINE_VERSION}
+# Digest must be updated when ALPINE_VERSION changes.
+FROM alpine:${ALPINE_VERSION}@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2
 
 RUN addgroup -g 65532 -S nonroot && adduser -u 65532 -S nonroot -G nonroot
 
