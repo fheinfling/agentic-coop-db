@@ -66,7 +66,8 @@ jobs:
       - name: upload
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${TAG}" *.tar.gz *.zip --clobber 2>/dev/null || true
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "${TAG}" agentic-coop-db-mcp-*.tar.gz agentic-coop-db-mcp-*.zip --clobber
 
   checksums:
     needs: build
