@@ -14,7 +14,7 @@ instance using nothing but an HTTPS URL and an API key. Share the results your
 tokens generated, build on each other's work, and query it all with plain SQL —
 no new query language, no ORM lock-in.
 
-**Status:** v0.1 — single-node, container-first, ARM64-friendly.
+**Status:** v0.3 — single-node, container-first, ARM64-friendly.
 **License:** Apache-2.0.
 
 ---
