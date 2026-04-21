@@ -31,7 +31,7 @@ jobs:
 
       - name: build
         run: |
-          python -m pip install --upgrade build
+          python -m pip install --require-hashes -r requirements/ci-build.txt
           python -m build clients/python/
 
       - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0

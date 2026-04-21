@@ -1,0 +1,11 @@
+# CI Python SDK deps — input for pip-compile.
+# Includes runtime + dev dependencies from clients/python/pyproject.toml.
+# Regenerate: pip-compile --generate-hashes --allow-unsafe --no-emit-index-url --strip-extras --output-file=ci-python.txt ci-python.in
+requests>=2.32
+typer>=0.12
+platformdirs>=4.2
+pytest>=8
+pytest-asyncio>=0.23
+ruff>=0.5
+mypy>=1.10
+types-requests
