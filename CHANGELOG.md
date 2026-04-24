@@ -5,6 +5,13 @@ All notable changes to Agentic Coop DB are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/fheinfling/Agentic-Coop-DB/compare/v0.3.1...v0.4.0) (2026-04-24)
+
+
+### Features
+
+* Add embedded MCP server via Streamable HTTP transport ([#41](https://github.com/fheinfling/Agentic-Coop-DB/issues/41)) ([10c28b0](https://github.com/fheinfling/Agentic-Coop-DB/commit/10c28b086e308250a83df7f86395bc425836c65b))
+
 ## [0.3.1](https://github.com/fheinfling/Agentic-Coop-DB/compare/v0.3.0...v0.3.1) (2026-04-12)
 
 
